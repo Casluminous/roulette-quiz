@@ -57,6 +57,7 @@ export default function App() {
     handleBotCallLiar,
     handleBotAcceptPlay,
     botHudMessage,
+    botGun,
     isSpectating,
     syncHandCards,
     syncPlayers,
@@ -361,7 +362,7 @@ export default function App() {
           callResult={callResult}
           devilReveal={devilReveal}
           triggerResult={triggerResult}
-          gunState={gunState}
+          gunState={botMode ? { bulletsFired: botGun.bulletsFired, currentPosition: botGun.currentPosition, bulletCount: 6 - botGun.bulletsFired } : gunState}
           canCall={canCall}
           roomId={roomId}
           onLeaveAfterDeath={handleLeaveAfterDeath}

@@ -227,6 +227,12 @@ export function useBotGame(playerName: string, callbacks: BotGameCallbacks) {
     bulletsFiredCountRef.current++;
     const bulletCount = 6 - bulletsFiredCountRef.current;
 
+    setBotGun(prev => ({
+      ...prev,
+      bulletsFired: bulletsFiredCountRef.current,
+      currentPosition: (prev.currentPosition + 1) % 6,
+    }));
+
     Sounds.gunClick();
 
     setTimeout(() => {
@@ -242,7 +248,6 @@ export function useBotGame(playerName: string, callbacks: BotGameCallbacks) {
         if (p.id === targetId) {
           return {
             ...p,
-            shotsFired: (p.shotsFired || 0) + 1,
             isAlive: alive ? p.isAlive : false,
             cardsCount: alive ? p.cardsCount : 0,
           };
@@ -259,7 +264,6 @@ export function useBotGame(playerName: string, callbacks: BotGameCallbacks) {
         playerId: targetId,
         playerName: targetName,
         bulletCount,
-        shotsFired: (playersRef.current.find(p => p.id === targetId)?.shotsFired || 0) + 1,
       });
       cb.setPhase('trigger');
 
@@ -547,6 +551,7 @@ export function useBotGame(playerName: string, callbacks: BotGameCallbacks) {
     botCount,
     bots,
     botHudMessage,
+    botGun,
     isSpectating,
     startBotGame,
     handleBotDisconnect,
