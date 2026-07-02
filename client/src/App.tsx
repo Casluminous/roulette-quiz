@@ -196,7 +196,7 @@ export default function App() {
 
     socketClient.on('game:turn', (data: { playerId: string; phase?: string; canCall?: boolean }) => {
       setCurrentTurnId(data.playerId);
-      setCanCall(data.canCall || false);
+      setCanCall(data.playerId !== localPlayerId && (data.canCall || false));
       if (data.phase) {
         setPhase(data.phase as GamePhase);
       } else {
