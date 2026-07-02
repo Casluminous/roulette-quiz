@@ -77,6 +77,10 @@ app.get('/lan-servers', (_req, res) => {
   res.json({ servers: [] });
 });
 
+app.get('/api/rooms', (_req, res) => {
+  res.json({ rooms: roomManager.getWaitingRooms() });
+});
+
 setInterval(() => {
   roomManager.cleanupStaleRooms();
 }, 60000);

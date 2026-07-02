@@ -1,9 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { socketClient } from '../network/SocketClient';
 import { ArrowLeft, Plus, Users, Shield, CheckCircle, WarningCircle } from '@phosphor-icons/react';
 import { Player } from '../types';
 import { Sounds } from '../audio/Sounds';
+
+interface RoomInfo {
+  id: string;
+  playerCount: number;
+  maxPlayers: number;
+  createdAt: number;
+}
 
 interface LobbyProps {
   roomId: string;
@@ -18,6 +25,34 @@ export function Lobby({ roomId, players, localId, error, disconnect }: LobbyProp
   const [modalCode, setModalCode] = useState<string>('');
   const [shakeModal, setShakeModal] = useState<boolean>(false);
   const [isReady, setIsReady] = useState<boolean>(false);
+  const [availableRooms, setAvailableRooms] = useState<RoomInfo[]>([]);
+  const [loadingRooms, setLoadingRooms] = useState<boolean>(false);
+
+  const fetchRooms = useCallback(async () => {
+    if (roomId) return;
+    setLoadingRooms(true);
+    try {
+      let baseUrl: string;
+      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        baseUrl = `http://${window.location.hostname}:3000`;
+      } else {
+        baseUrl = window.location.origin;
+      }
+      const res = await fetch(`${baseUrl}/api/rooms`);
+      const data = await res.json();
+      setAvailableRooms(data.rooms || []);
+    } catch {
+      setAvailableRooms([]);
+    } finally {
+      setLoadingRooms(false);
+    }
+  }, [roomId]);
+
+  useEffect(() => {
+    fetchRooms();
+    const interval = setInterval(fetchRooms, 5000);
+    return () => clearInterval(interval);
+  }, [fetchRooms]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -143,6 +178,41 @@ export function Lobby({ roomId, players, localId, error, disconnect }: LobbyProp
             </button>
           )}
         </div>
+
+        {!roomId && availableRooms.length > 0 && (
+          <div className="flex flex-col space-y-2 max-w-sm w-full mt-2">
+            <span className="text-[10px] text-text-theme-muted font-extrabold tracking-widest uppercase">OPEN_PROTOCOLS //</span>
+            <div className="flex flex-col space-y-2 max-h-48 overflow-y-auto pr-1 scrollbar-thin">
+              {availableRooms.map((room) => (
+                <button
+                  key={room.id}
+                  onClick={() => {
+                    Sounds.buttonClick();
+                    socketClient.joinRoom(room.id, socketClient.playerName || 'GUEST');
+                  }}
+                  className="group w-full py-3 bg-panel-solid/60 backdrop-blur-sm border border-border-theme hover:border-emerald-theme-border hover:bg-surface-2 rounded-xl text-xs font-extrabold text-text-theme-secondary tracking-wider uppercase flex items-center justify-between px-5 transition-all duration-200 cursor-pointer"
+                >
+                  <span className="flex items-center gap-3">
+                    <span className="text-emerald-theme font-black tracking-[4px]">{room.id}</span>
+                  </span>
+                  <span className="flex items-center gap-2 text-text-theme-muted">
+                    <Users size={14} />
+                    {room.playerCount}/{room.maxPlayers}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {!roomId && availableRooms.length === 0 && !loadingRooms && (
+          <div className="flex flex-col space-y-2 max-w-sm w-full mt-2">
+            <span className="text-[10px] text-text-theme-muted font-extrabold tracking-widest uppercase">OPEN_PROTOCOLS //</span>
+            <div className="text-text-theme-muted text-xs italic py-4 px-5 border border-dashed border-border-theme rounded-xl bg-input-theme flex items-center gap-3">
+              <span className="w-1.5 h-1.5 rounded-full bg-text-theme-dim animate-pulse" /> No active protocols found...
+            </div>
+          </div>
+        )}
 
         <button onClick={disconnect}
           className="max-w-max flex items-center gap-2 text-text-theme-muted hover:text-text-theme hover:translate-x-[-2px] transition-all text-xs font-bold tracking-wider uppercase cursor-pointer"

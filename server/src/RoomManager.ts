@@ -82,8 +82,11 @@ export class RoomManager {
       return { success: false, error: 'Already in room' };
     }
 
-    if (room.players.some(p => p.name === sanitized)) {
-      return { success: false, error: 'Name already taken' };
+    const existingByName = room.players.findIndex(p => p.name === sanitized);
+    if (existingByName !== -1) {
+      const stale = room.players[existingByName];
+      room.players.splice(existingByName, 1);
+      this.playerRooms.delete(stale.id);
     }
 
     room.players.push({
@@ -157,5 +160,20 @@ export class RoomManager {
   getPlayerRoom(socketId: string): Room | undefined {
     const roomId = this.playerRooms.get(socketId);
     return roomId ? this.rooms.get(roomId) : undefined;
+  }
+
+  getWaitingRooms(): { id: string; playerCount: number; maxPlayers: number; createdAt: number }[] {
+    const result: { id: string; playerCount: number; maxPlayers: number; createdAt: number }[] = [];
+    for (const [id, room] of this.rooms.entries()) {
+      if (room.state === 'waiting' && room.players.length < 4) {
+        result.push({
+          id,
+          playerCount: room.players.length,
+          maxPlayers: 4,
+          createdAt: room.createdAt,
+        });
+      }
+    }
+    return result;
   }
 }
