@@ -75,6 +75,7 @@ export default function App() {
 
   const connectToServer = (mode: string, name: string, ip?: string) => {
     setPlayerName(name);
+    socketClient.playerName = name;
     setGameMode(mode);
     setConnectionStatus('connecting');
     setErrorMsg('');
