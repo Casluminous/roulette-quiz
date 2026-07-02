@@ -348,6 +348,11 @@ export class GameManager {
       targetPlayer.isAlive = false;
       targetPlayer.hasCards = false;
 
+      const deadSocket = this.io.sockets.sockets.get(targetPlayer.id);
+      if (deadSocket) {
+        deadSocket.leave(roomId);
+      }
+
       this.io.to(roomId).emit('game:trigger', {
         alive: false,
         playerId: targetPlayer.id,
