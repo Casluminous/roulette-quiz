@@ -61,14 +61,6 @@ const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 app.use(cors());
 app.use(express.static('public'));
 
-if (isProduction) {
-  const clientDistPath = path.join(__dirname, '../../client/dist');
-  app.use(express.static(clientDistPath));
-  app.get('*', (_req, res) => {
-    res.sendFile(path.join(clientDistPath, 'index.html'));
-  });
-}
-
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', rooms: roomManager.getRoomCount() });
 });
@@ -80,6 +72,14 @@ app.get('/lan-servers', (_req, res) => {
 app.get('/api/rooms', (_req, res) => {
   res.json({ rooms: roomManager.getWaitingRooms() });
 });
+
+if (isProduction) {
+  const clientDistPath = path.join(__dirname, '../../client/dist');
+  app.use(express.static(clientDistPath));
+  app.get('*', (_req, res) => {
+    res.sendFile(path.join(clientDistPath, 'index.html'));
+  });
+}
 
 setInterval(() => {
   roomManager.cleanupStaleRooms();
