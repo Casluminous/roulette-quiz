@@ -3,8 +3,9 @@ services:
     name: roulette-quiz
     runtime: node
     plan: free
-    buildCommand: cd client && npm install && npx --yes vite build && cd ../server && npm install && npx tsc
+    buildCommand: cd client && npm install --include=dev && npx --yes vite build && cd ../server && npm install && npx tsc
     startCommand: cd server && NODE_ENV=production node dist/index.js
     envVars:
       - key: NODE_ENV
         value: production
+    autoDeploy: true
