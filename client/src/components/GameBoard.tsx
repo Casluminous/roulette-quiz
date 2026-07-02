@@ -583,7 +583,7 @@ export function GameBoard({
                   key={card.id}
                   initial={{ opacity: 0, y: 40, scale: 0.9 }}
                   animate={{
-                    opacity: isPlayable ? 1 : 0.3,
+                    opacity: isPlayable ? 1 : 0.6,
                     x: baseX,
                     y: hoverY,
                     rotateY: isHovered ? tilt.x * 0.3 : 0,

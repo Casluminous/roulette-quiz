@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { socketClient } from './network/SocketClient';
 import { MainMenu } from './components/MainMenu';
 import { Lobby } from './components/Lobby';
@@ -14,6 +14,7 @@ export default function App() {
   const [roomId, setRoomId] = useState<string>('');
   const [players, setPlayers] = useState<Player[]>([]);
   const [localPlayerId, setLocalPlayerId] = useState<string>('');
+  const localPlayerIdRef = useRef<string>('');
   const [gameMode, setGameMode] = useState<string>('online');
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('disconnected');
   const [errorMsg, setErrorMsg] = useState<string>('');
@@ -72,6 +73,8 @@ export default function App() {
   useEffect(() => { syncPlayers(players); }, [players, syncPlayers]);
   useEffect(() => { syncPhase(phase); }, [phase, syncPhase]);
   useEffect(() => { syncCurrentTurn(currentTurnId); }, [currentTurnId, syncCurrentTurn]);
+
+  useEffect(() => { localPlayerIdRef.current = localPlayerId; }, [localPlayerId]);
 
   const connectToServer = (mode: string, name: string, ip?: string) => {
     setPlayerName(name);
@@ -196,7 +199,8 @@ export default function App() {
 
     socketClient.on('game:turn', (data: { playerId: string; phase?: string; canCall?: boolean }) => {
       setCurrentTurnId(data.playerId);
-      setCanCall(data.playerId !== localPlayerId && (data.canCall || false));
+      const isMyTurn = data.playerId === localPlayerIdRef.current;
+      setCanCall(isMyTurn && (data.canCall || false));
       if (data.phase) {
         setPhase(data.phase as GamePhase);
       } else {
