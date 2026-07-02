@@ -39,35 +39,23 @@ interface OpponentPos {
   angle: number;
 }
 
-const getOpponentPosition = (playerId: string, total: number): OpponentPos => {
-  const posMap: Record<string, OpponentPos> = {
-    'bot-0': {
-      className: "absolute left-8 top-[48%] -translate-y-1/2 flex flex-col items-center space-y-2 z-20",
-      angle: 180
-    },
-    'bot-1': {
-      className: "absolute top-20 left-1/2 -translate-x-1/2 flex flex-col items-center space-y-2 z-20",
-      angle: -90
-    },
-    'bot-2': {
-      className: "absolute right-8 top-[48%] -translate-y-1/2 flex flex-col items-center space-y-2 z-20",
-      angle: 0
-    },
-  };
+const getOpponentPosition = (index: number, total: number): OpponentPos => {
+  const positions1 = [
+    { className: "absolute top-20 left-1/2 -translate-x-1/2 flex flex-col items-center space-y-2 z-20", angle: -90 }
+  ];
+  const positions2 = [
+    { className: "absolute left-8 top-[48%] -translate-y-1/2 flex flex-col items-center space-y-2 z-20", angle: 180 },
+    { className: "absolute right-8 top-[48%] -translate-y-1/2 flex flex-col items-center space-y-2 z-20", angle: 0 }
+  ];
+  const positions3 = [
+    { className: "absolute left-8 top-[48%] -translate-y-1/2 flex flex-col items-center space-y-2 z-20", angle: 180 },
+    { className: "absolute top-20 left-1/2 -translate-x-1/2 flex flex-col items-center space-y-2 z-20", angle: -90 },
+    { className: "absolute right-8 top-[48%] -translate-y-1/2 flex flex-col items-center space-y-2 z-20", angle: 0 }
+  ];
 
-  if (posMap[playerId]) return posMap[playerId];
-
-  if (total === 1) {
-    return {
-      className: "absolute top-20 left-1/2 -translate-x-1/2 flex flex-col items-center space-y-2 z-20",
-      angle: -90
-    };
-  }
-
-  return {
-    className: "absolute top-20 left-1/2 -translate-x-1/2 flex flex-col items-center space-y-2 z-20",
-    angle: -90
-  };
+  if (total === 1) return positions1[0];
+  if (total === 2) return positions2[index] || positions2[0];
+  return positions3[index] || positions3[0];
 };
 
 const getCardTypeStyle = (type: CardType): { color: string; label: string; icon: string } => {
@@ -87,7 +75,7 @@ const getCardTypeStyle = (type: CardType): { color: string; label: string; icon:
   }
 };
 
-type CardType = 'king' | 'queen' | 'ace' | 'joker';
+type CardType = 'king' | 'queen' | 'ace' | 'joker' | 'devil';
 
 export function GameBoard({
   round,
@@ -195,8 +183,11 @@ export function GameBoard({
         if (playerId === localId) {
           targetAngle = 90;
         } else {
-          const oppPos = getOpponentPosition(playerId, opponentPlayers.length);
-          targetAngle = oppPos.angle;
+          const oppIndex = opponentPlayers.findIndex(p => p.id === playerId);
+          if (oppIndex >= 0) {
+            const oppPos = getOpponentPosition(oppIndex, opponentPlayers.length);
+            targetAngle = oppPos.angle;
+          }
         }
       }
       setRotationAngle(targetAngle);
@@ -343,10 +334,10 @@ export function GameBoard({
         </span>
       </div>
 
-      {opponentPlayers.map((opponent) => {
+      {opponentPlayers.map((opponent, index) => {
         const cardCount = opponent.cardsCount || 0;
         const isCurrentTurn = currentTurnId === opponent.id;
-        const pos = getOpponentPosition(opponent.id, opponentPlayers.length);
+        const pos = getOpponentPosition(index, opponentPlayers.length);
 
         return (
           <div key={opponent.id} className={pos.className}>
