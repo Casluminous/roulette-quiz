@@ -82,7 +82,7 @@ export default function App() {
     let serverUrl: string;
     if (mode === 'lan' && ip) {
       serverUrl = `http://${ip}`;
-    } else if (window.location.port === '5173' || window.location.port === '') {
+    } else if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
       serverUrl = `http://${window.location.hostname}:3000`;
     } else {
       serverUrl = window.location.origin;
