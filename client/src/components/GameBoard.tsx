@@ -79,7 +79,7 @@ const getCardTypeStyle = (type: CardType): { color: string; label: string; icon:
     case 'ace':
       return { color: '#ef4444', label: 'ACE', icon: '♠' };
     case 'joker':
-      return { color: 'rainbow', label: 'JOKER', icon: '★' };
+      return { color: '#3b82f6', label: 'JOKER', icon: '★' };
     default:
       return { color: 'var(--text-theme)', label: '??', icon: '?' };
   }
@@ -603,16 +603,8 @@ export function GameBoard({
                     transformOrigin: 'center 110%',
                     zIndex: hoverZ,
                     transformStyle: 'preserve-3d',
-                    borderColor: cardStyle.color === 'rainbow'
-                      ? undefined
-                      : (isHovered || isSelected) ? cardStyle.color : `${cardStyle.color}80`,
-                    background: cardStyle.color === 'rainbow'
-                      ? 'linear-gradient(var(--card-theme), var(--card-theme)) padding-box, linear-gradient(135deg, #f97316, #ef4444, #a855f7, #3b82f6, #22c55e, #f97316) border-box'
-                      : undefined,
-                    border: cardStyle.color === 'rainbow'
-                      ? '2px solid transparent'
-                      : undefined,
-                    boxShadow: isSelected ? `0 0 15px ${cardStyle.color === 'rainbow' ? '#a855f7' : cardStyle.color}60` : 'none',
+                    borderColor: (isHovered || isSelected) ? cardStyle.color : `${cardStyle.color}60`,
+                    boxShadow: isSelected ? `0 0 15px ${cardStyle.color}60` : 'none',
                     margin: '0 2px',
                   }}
                 >
@@ -833,23 +825,15 @@ export function GameBoard({
                       initial={{ rotateY: 180, opacity: 0 }}
                       animate={{ rotateY: 0, opacity: 1 }}
                       transition={{ delay: index * 0.2, duration: 0.4 }}
-                      className={`w-24 h-32 border-2 rounded-none p-2 flex flex-col items-center justify-center bg-card-theme`}
+                      className="w-24 h-32 border-2 rounded-none p-2 flex flex-col items-center justify-center bg-card-theme"
                       style={{
-                        borderColor: cardStyle.color === 'rainbow'
-                          ? undefined
-                          : `${cardStyle.color}cc`,
-                        border: cardStyle.color === 'rainbow'
-                          ? '2px solid transparent'
-                          : undefined,
-                        background: cardStyle.color === 'rainbow'
-                          ? 'linear-gradient(var(--card-theme), var(--card-theme)) padding-box, linear-gradient(135deg, #f97316, #ef4444, #a855f7, #3b82f6, #22c55e, #f97316) border-box'
-                          : undefined,
+                        borderColor: `${cardStyle.color}cc`,
                       }}
                     >
-                      <div className="text-3xl" style={{ color: cardStyle.color === 'rainbow' ? '#a855f7' : cardStyle.color }}>
+                      <div className="text-3xl" style={{ color: cardStyle.color }}>
                         {cardStyle.icon}
                       </div>
-                      <span className="text-[10px] font-bold font-mono mt-1" style={{ color: cardStyle.color === 'rainbow' ? '#a855f7' : cardStyle.color }}>
+                      <span className="text-[10px] font-bold font-mono mt-1" style={{ color: cardStyle.color }}>
                         {cardStyle.label}
                       </span>
                       {card.isDevil && (
