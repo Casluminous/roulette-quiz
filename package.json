@@ -4,12 +4,16 @@
   "description": "Multiplayer party game combining Liar's Deck bluffing with Russian Roulette",
   "main": "client/main.js",
   "scripts": {
-    "start": "electron .",
+    "start": "cd server && npm start",
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
     "dev:server": "cd server && npm run dev",
     "dev:client": "cd client && npm run dev",
     "server:start": "cd server && npm start",
-    "build": "electron-builder"
+    "build:client": "cd client && npm install && npm run build",
+    "build:server": "cd server && npm install && npm run build",
+    "build": "npm run build:client && npm run build:server",
+    "install:all": "cd client && npm install && cd ../server && npm install",
+    "electron-build": "electron-builder"
   },
   "dependencies": {
     "electron": "^28.0.0"

@@ -1,5 +1,6 @@
 import express from 'express';
 import http from 'http';
+import path from 'path';
 import { Server } from 'socket.io';
 import { RoomManager } from './RoomManager';
 import { GameManager } from './GameManager';
@@ -7,6 +8,9 @@ import cors from 'cors';
 
 const app = express();
 const server = http.createServer(app);
+
+const isProduction = process.env.NODE_ENV === 'production';
+
 const ALLOWED_ORIGINS = [
   'http://localhost:5173',
   'http://localhost:3000',
@@ -14,11 +18,16 @@ const ALLOWED_ORIGINS = [
   'http://127.0.0.1:3000',
 ];
 
+if (process.env.RENDER_EXTERNAL_URL) {
+  ALLOWED_ORIGINS.push(process.env.RENDER_EXTERNAL_URL);
+}
+
 const io = new Server(server, {
   cors: {
     origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
       if (!origin) return callback(null, true);
       if (origin.startsWith('file://')) return callback(null, true);
+      if (isProduction) return callback(null, true);
       if (ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
       callback(new Error('Not allowed by CORS'));
     },
@@ -51,6 +60,14 @@ const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
 app.use(cors());
 app.use(express.static('public'));
+
+if (isProduction) {
+  const clientDistPath = path.join(__dirname, '../../client/dist');
+  app.use(express.static(clientDistPath));
+  app.get('*', (_req, res) => {
+    res.sendFile(path.join(clientDistPath, 'index.html'));
+  });
+}
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', rooms: roomManager.getRoomCount() });
