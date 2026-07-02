@@ -47,7 +47,6 @@ export class GameManager {
         name: p.name,
         cardsCount: 5,
         isAlive: true,
-        shotsFired: 0,
       })),
       round: gameState.round,
     });
@@ -106,7 +105,6 @@ export class GameManager {
         id: p.id,
         cardsCount: p.isAlive ? p.hand.length : 0,
         isAlive: p.isAlive,
-        shotsFired: p.shotsFired,
       })),
       tableType: game.tableType,
     });
@@ -156,7 +154,6 @@ export class GameManager {
         id: p.id,
         cardsCount: p.isAlive ? p.hand.length : 0,
         isAlive: p.isAlive,
-        shotsFired: p.shotsFired,
       })),
       tableType: game.tableType,
     });
@@ -342,7 +339,6 @@ export class GameManager {
     gun.currentPosition = (gun.currentPosition + 1) % 6;
 
     const targetPlayer = game.players[game.devilPlayerIndex];
-    targetPlayer.shotsFired++;
 
     if (bullet) {
       targetPlayer.isAlive = false;
@@ -358,15 +354,11 @@ export class GameManager {
         playerId: targetPlayer.id,
         playerName: targetPlayer.name,
         bulletCount: 6 - gun.bulletsFired,
-        shotsFired: targetPlayer.shotsFired,
-        nextRound: false,
       });
     } else {
       this.io.to(roomId).emit('game:trigger', {
         alive: true,
         bulletCount: 6 - gun.bulletsFired,
-        shotsFired: targetPlayer.shotsFired,
-        nextRound: true,
       });
     }
 

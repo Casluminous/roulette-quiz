@@ -15,7 +15,6 @@ export interface Player {
   hand: Card[];
   isAlive: boolean;
   left?: boolean;
-  shotsFired: number;
   hasCards: boolean;
 }
 

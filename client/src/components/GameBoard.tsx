@@ -281,7 +281,7 @@ export function GameBoard({
     setTilt({ x: 0, y: 0 });
   };
 
-  const localPlayer = players.find(p => p.id === localId) || { name: 'YOU', isAlive: true, shotsFired: 0, cardsCount: 0 };
+  const localPlayer = players.find(p => p.id === localId) || { name: 'YOU', isAlive: true, cardsCount: 0 };
   const opponentPlayers = players.filter(p => p.id !== localId);
   const isSpectating = !localPlayer.isAlive;
   const isMyTurn = currentTurnId === localId;
@@ -435,11 +435,6 @@ export function GameBoard({
                     : `CARDS // [0${cardCount}]`
               }
             </span>
-            {opponent.isAlive && (
-              <span className={`text-[8px] font-mono tracking-wider ${(opponent.shotsFired || 0) >= 4 ? 'text-red-theme' : (opponent.shotsFired || 0) >= 2 ? 'text-amber-theme' : 'text-text-theme-muted'}`}>
-                SHOTS // {opponent.shotsFired || 0}/6
-              </span>
-            )}
           </div>
         );
       })}
@@ -748,11 +743,6 @@ export function GameBoard({
                     : `CARDS // [0${localPlayer.cardsCount || 0}]`
               }
             </span>
-            {localPlayer.isAlive && (
-              <span className={`text-[8px] font-mono tracking-wider mt-1 ${(localPlayer.shotsFired || 0) >= 4 ? 'text-red-theme' : (localPlayer.shotsFired || 0) >= 2 ? 'text-amber-theme' : 'text-text-theme-muted'}`}>
-                SHOTS // {localPlayer.shotsFired || 0}/6
-              </span>
-            )}
           </div>
           {!localPlayer.isAlive && (
             <button

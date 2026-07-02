@@ -13,7 +13,6 @@ export interface Player {
   isReady?: boolean;
   cardsCount?: number;
   isAlive?: boolean;
-  shotsFired?: number;
 }
 
 export interface TriggerResult {
@@ -21,7 +20,6 @@ export interface TriggerResult {
   playerId?: string;
   playerName?: string;
   bulletCount: number;
-  shotsFired?: number;
 }
 
 export interface WinnerInfo {

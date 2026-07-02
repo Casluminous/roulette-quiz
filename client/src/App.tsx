@@ -240,7 +240,6 @@ export default function App() {
         playerId: data.playerId,
         playerName: data.playerName,
         bulletCount: data.bulletCount,
-        shotsFired: data.shotsFired,
       });
 
       if (data.playerId) {
@@ -250,7 +249,6 @@ export default function App() {
               ...p,
               isAlive: data.alive ? p.isAlive : false,
               cardsCount: data.alive ? p.cardsCount : 0,
-              shotsFired: data.shotsFired ?? p.shotsFired,
             };
           }
           return p;
@@ -301,11 +299,11 @@ export default function App() {
       setPlayers(prev => prev.filter(p => p.id !== data.playerId));
     });
 
-    socketClient.on('game:cardsUpdate', (data: { players: { id: string; cardsCount: number; isAlive: boolean; shotsFired: number }[]; tableType?: TableType }) => {
+    socketClient.on('game:cardsUpdate', (data: { players: { id: string; cardsCount: number; isAlive: boolean }[]; tableType?: TableType }) => {
       setPlayers(prev => prev.map(p => {
         const update = data.players.find((u: any) => u.id === p.id);
         if (update) {
-          return { ...p, cardsCount: update.cardsCount, isAlive: update.isAlive, shotsFired: update.shotsFired };
+          return { ...p, cardsCount: update.cardsCount, isAlive: update.isAlive };
         }
         return p;
       }));
