@@ -1,4 +1,4 @@
-export type CardType = 'king' | 'queen' | 'ace' | 'joker';
+export type CardType = 'king' | 'queen' | 'ace' | 'joker' | 'devil';
 
 export type TableType = 'king' | 'queen' | 'ace';
 
@@ -42,6 +42,8 @@ export interface GameState {
   tablePile: Card[];
   round: number;
   gun: Gun;
+  devilGun: Gun;
+  devilTriggered: boolean;
   callingPlayer?: number;
   lastPlayCount?: number;
   devilPlayerIndex?: number;

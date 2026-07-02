@@ -234,6 +234,58 @@ export default function App() {
       Sounds.devilReveal();
     });
 
+    socketClient.on('game:devilShot', (data: { targetName: string; targetId: string; alive: boolean; bulletCount: number }) => {
+      setTriggerResult({
+        alive: data.alive,
+        playerId: data.targetId,
+        playerName: data.targetName,
+        bulletCount: data.bulletCount,
+      });
+      setPhase('trigger');
+
+      if (!data.alive) {
+        setPlayers(prev => prev.map(p => {
+          if (p.id === data.targetId) {
+            return { ...p, isAlive: false, cardsCount: 0 };
+          }
+          return p;
+        }));
+      }
+
+      setTimeout(() => {
+        setTriggerResult(null);
+        setCallResult(null);
+        setDevilReveal(null);
+      }, 5000);
+    });
+
+    socketClient.on('game:devilAcceptShot', (data: { players: { id: string; name: string; alive: boolean }[]; bulletCount: number }) => {
+      setPhase('trigger');
+      setPlayers(prev => prev.map(p => {
+        const update = data.players.find((u: any) => u.id === p.id);
+        if (update) {
+          return { ...p, isAlive: update.alive, cardsCount: update.alive ? p.cardsCount : 0 };
+        }
+        return p;
+      }));
+
+      const firstDead = data.players.find(p => !p.alive);
+      if (firstDead) {
+        setTriggerResult({
+          alive: false,
+          playerId: firstDead.id,
+          playerName: firstDead.name,
+          bulletCount: data.bulletCount,
+        });
+      }
+
+      setTimeout(() => {
+        setTriggerResult(null);
+        setCallResult(null);
+        setDevilReveal(null);
+      }, 5000);
+    });
+
     socketClient.on('game:trigger', (data: TriggerResult) => {
       setPhase('trigger');
       setTriggerResult({
@@ -323,7 +375,7 @@ export default function App() {
     });
 
     return () => {
-      ['room:created', 'room:joined', 'room:players', 'room:left', 'game:start', 'game:deal', 'game:turn', 'game:cardsPlayed', 'game:callResult', 'game:devilReveal', 'game:trigger', 'game:newRound', 'game:over', 'game:playerLeft', 'game:playerLeftAfterDeath', 'game:cardsUpdate', 'game:accepted', 'game:roundEnd', 'error'].forEach(event => {
+      ['room:created', 'room:joined', 'room:players', 'room:left', 'game:start', 'game:deal', 'game:turn', 'game:cardsPlayed', 'game:callResult', 'game:devilReveal', 'game:devilShot', 'game:devilAcceptShot', 'game:trigger', 'game:newRound', 'game:over', 'game:playerLeft', 'game:playerLeftAfterDeath', 'game:cardsUpdate', 'game:accepted', 'game:roundEnd', 'error'].forEach(event => {
         socketClient.clearListeners(event);
       });
     };

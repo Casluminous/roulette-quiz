@@ -1,4 +1,4 @@
-export type CardType = 'king' | 'queen' | 'ace' | 'joker';
+export type CardType = 'king' | 'queen' | 'ace' | 'joker' | 'devil';
 export type TableType = 'king' | 'queen' | 'ace';
 
 export interface Card {
@@ -33,6 +33,7 @@ export interface CallResult {
   revealedCards: Card[];
   previousPlayer?: string;
   liarName?: string;
+  hasDevilCard?: boolean;
 }
 
 export interface DevilReveal {

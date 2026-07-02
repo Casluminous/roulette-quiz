@@ -35,6 +35,7 @@ const DECK_CONFIG: Record<CardType, number> = {
   queen: 6,
   ace: 6,
   joker: 2,
+  devil: 2,
 };
 
 function createRealDeck(): Card[] {
@@ -64,6 +65,12 @@ function dealFromDeck(deck: Card[], count: number): { cards: Card[]; remaining: 
 function createBotGun() {
   const chambers = Array(6).fill(false);
   chambers[Math.floor(Math.random() * 6)] = true;
+  return { chambers, currentPosition: 0, bulletsFired: 0 };
+}
+
+function createDevilGun() {
+  const chambers = Array(4).fill(false);
+  chambers[Math.floor(Math.random() * 4)] = true;
   return { chambers, currentPosition: 0, bulletsFired: 0 };
 }
 
@@ -290,7 +297,8 @@ export function useBotGame(playerName: string, callbacks: BotGameCallbacks) {
     const cb = callbacksRef.current;
     const playedCards = lastPlayedCardsRef.current;
     const declaration = lastDeclarationRef.current;
-    const wasLying = playedCards.some(c => c.type !== declaration && c.type !== 'joker');
+    const wasLying = playedCards.some(c => c.type !== declaration && c.type !== 'joker' && c.type !== 'devil');
+    const hasDevilCard = playedCards.some(c => c.type === 'devil');
 
     const callerName = callerId === 'local-player' ? playerName : botsRef.current.find(b => b.id === callerId)?.name || 'BOT';
     const previousName = previousPlayerId === 'local-player' ? playerName : botsRef.current.find(b => b.id === previousPlayerId)?.name || 'BOT';
@@ -300,8 +308,27 @@ export function useBotGame(playerName: string, callbacks: BotGameCallbacks) {
       wasLying,
       revealedCards: playedCards,
       previousPlayer: previousName,
+      hasDevilCard,
     });
     cb.setPhase('revealing');
+
+    if (hasDevilCard) {
+      setTimeout(() => {
+        cb.setCallResult(null);
+        const bullet = Math.random() < 0.25;
+        executeTriggerForPlayer(callerId, () => {
+          if (checkBotGameOver()) return;
+          dealNewRound();
+          const nextTurn = getNextAliveWithCards(callerId);
+          cb.setCurrentTurnId(nextTurn);
+          cb.setPhase('playing');
+          if (nextTurn !== 'local-player') {
+            setTimeout(() => botPlayTurn(nextTurn), 1500);
+          }
+        });
+      }, 3000);
+      return;
+    }
 
     const targetId = wasLying ? previousPlayerId : callerId;
 
@@ -321,7 +348,7 @@ export function useBotGame(playerName: string, callbacks: BotGameCallbacks) {
         }
       });
     }, 3000);
-  }, [playerName, getNextAliveWithCards, dealNewRound, executeTriggerForPlayer, checkBotGameOver]);
+  }, [playerName, getNextAliveWithCards, dealNewRound, executeTriggerForPlayer, checkBotGameOver, botPlayTurn]);
 
   const botPlayTurn = useCallback((botId: string) => {
     clearAllTimers();
@@ -442,9 +469,24 @@ export function useBotGame(playerName: string, callbacks: BotGameCallbacks) {
   const handleBotAcceptPlay = useCallback(() => {
     clearAllTimers();
     const cb = callbacksRef.current;
+    const playedCards = lastPlayedCardsRef.current;
+    const hasDevilCard = playedCards.some(c => c.type === 'devil');
 
     cb.setPlayedCount(0);
     cb.setPlayedBy('');
+
+    if (hasDevilCard) {
+      cb.setPhase('revealing');
+      setTimeout(() => {
+        cb.setPhase('playing');
+        const currentTurn = currentTurnRef.current;
+        cb.setCurrentTurnId(currentTurn);
+        if (currentTurn !== 'local-player') {
+          setTimeout(() => botPlayTurn(currentTurn), 1500);
+        }
+      }, 3000);
+      return;
+    }
 
     const currentTurn = currentTurnRef.current;
     cb.setCurrentTurnId(currentTurn);

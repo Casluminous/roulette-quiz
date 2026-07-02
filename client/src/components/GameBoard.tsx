@@ -80,6 +80,8 @@ const getCardTypeStyle = (type: CardType): { color: string; label: string; icon:
       return { color: '#ef4444', label: 'ACE', icon: '♠' };
     case 'joker':
       return { color: '#3b82f6', label: 'JOKER', icon: '★' };
+    case 'devil':
+      return { color: '#dc2626', label: 'DEVIL', icon: '😈' };
     default:
       return { color: 'var(--text-theme)', label: '??', icon: '?' };
   }

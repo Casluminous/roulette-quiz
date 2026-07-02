@@ -36,6 +36,8 @@ export class GameManager {
       tablePile: [],
       round: 1,
       gun: this.createGun(),
+      devilGun: this.createDevilGun(),
+      devilTriggered: false,
     };
 
     this.games.set(roomId, gameState);
@@ -59,6 +61,16 @@ export class GameManager {
   private createGun(): Gun {
     const chambers = Array(6).fill(false);
     chambers[Math.floor(Math.random() * 6)] = true;
+    return {
+      chambers,
+      currentPosition: 0,
+      bulletsFired: 0,
+    };
+  }
+
+  private createDevilGun(): Gun {
+    const chambers = Array(4).fill(false);
+    chambers[Math.floor(Math.random() * 4)] = true;
     return {
       chambers,
       currentPosition: 0,
@@ -199,6 +211,18 @@ export class GameManager {
       game.callTimeout = undefined;
     }
 
+    const hasDevilCard = game.tablePile.some(card => card.type === 'devil');
+
+    if (hasDevilCard) {
+      this.io.to(roomId).emit('game:accepted', {
+        playerName: game.players[playerIndex].name,
+      });
+      setTimeout(() => {
+        this.handleDevilAcceptTrigger(roomId);
+      }, 2000);
+      return;
+    }
+
     game.tablePile = [];
     game.phase = 'playing';
     game.currentTurn = playerIndex;
@@ -232,8 +256,8 @@ export class GameManager {
     const previousPlayer = game.players[previousPlayerIndex];
     const playedCards = game.tablePile;
 
-    const isLying = playedCards.some(card => card.type !== game.tableType && card.type !== 'joker');
-    const hasDevil = playedCards.some(card => card.isDevil);
+    const isLying = playedCards.some(card => card.type !== game.tableType && card.type !== 'joker' && card.type !== 'devil');
+    const hasDevilCard = playedCards.some(card => card.type === 'devil');
 
     game.phase = 'revealing';
 
@@ -242,10 +266,13 @@ export class GameManager {
       wasLying: isLying,
       revealedCards: playedCards,
       previousPlayer: previousPlayer.name,
+      hasDevilCard,
     });
 
-    if (hasDevil) {
-      this.handleDevilCard(roomId, previousPlayerIndex, playerIndex);
+    if (hasDevilCard) {
+      setTimeout(() => {
+        this.handleDevilCallTrigger(roomId, playerIndex);
+      }, 3000);
       return;
     }
 
@@ -282,6 +309,70 @@ export class GameManager {
 
     setTimeout(() => {
       this.pullTriggerForMultiple(roomId, ownerIndex, affectedPlayers);
+    }, 3000);
+  }
+
+  private handleDevilCallTrigger(roomId: string, callerIndex: number): void {
+    const game = this.games.get(roomId);
+    if (!game) return;
+
+    const caller = game.players[callerIndex];
+    const devilGun = game.devilGun;
+    const bullet = devilGun.chambers[devilGun.currentPosition];
+    devilGun.bulletsFired++;
+    devilGun.currentPosition = (devilGun.currentPosition + 1) % 4;
+
+    this.io.to(roomId).emit('game:devilShot', {
+      targetName: caller.name,
+      targetId: caller.id,
+      alive: !bullet,
+      bulletCount: 4 - devilGun.bulletsFired,
+    });
+
+    if (bullet) {
+      caller.isAlive = false;
+      caller.hasCards = false;
+    }
+
+    setTimeout(() => {
+      this.afterTrigger(roomId, bullet);
+    }, 3000);
+  }
+
+  private handleDevilAcceptTrigger(roomId: string): void {
+    const game = this.games.get(roomId);
+    if (!game) return;
+
+    const devilGun = game.devilGun;
+    const affectedPlayers: { id: string; name: string; alive: boolean }[] = [];
+
+    game.players.forEach((player) => {
+      if (player.isAlive) {
+        const bullet = devilGun.chambers[devilGun.currentPosition];
+        devilGun.bulletsFired++;
+        devilGun.currentPosition = (devilGun.currentPosition + 1) % 4;
+
+        if (bullet) {
+          player.isAlive = false;
+          player.hasCards = false;
+        }
+
+        affectedPlayers.push({
+          id: player.id,
+          name: player.name,
+          alive: !bullet,
+        });
+      }
+    });
+
+    this.io.to(roomId).emit('game:devilAcceptShot', {
+      players: affectedPlayers,
+      bulletCount: 4 - devilGun.bulletsFired,
+    });
+
+    const anyDied = affectedPlayers.some(p => !p.alive);
+    setTimeout(() => {
+      this.afterTrigger(roomId, anyDied);
     }, 3000);
   }
 
