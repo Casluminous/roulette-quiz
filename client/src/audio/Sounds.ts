@@ -135,4 +135,9 @@ export const Sounds = {
   buttonClick() {
     beep(700, 0.04, 'sine', 0.1);
   },
+
+  turnAlert() {
+    beep(800, 0.08, 'sine', 0.2);
+    setTimeout(() => beep(1000, 0.08, 'sine', 0.15), 80);
+  },
 };

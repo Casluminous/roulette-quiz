@@ -226,6 +226,15 @@ export function GameBoard({
     }
   }, [triggerResult, localId, players]);
 
+  useEffect(() => {
+    if (currentTurnId === localId && phase === 'playing' && localPlayer.isAlive) {
+      showHUDAlert('// YOUR TURN', 'text-cyan-theme', 1000);
+      Sounds.turnAlert();
+    } else if (currentTurnId === localId && phase === 'calling' && localPlayer.isAlive) {
+      showHUDAlert('// CALL OR ACCEPT', 'text-amber-theme', 1000);
+    }
+  }, [currentTurnId, phase]);
+
   const showHUDAlert = (text: string, textColor: string, duration: number) => {
     setHudMessage({ text, color: textColor });
     setTimeout(() => setHudMessage(null), duration);
