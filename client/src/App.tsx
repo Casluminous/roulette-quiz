@@ -128,6 +128,7 @@ export default function App() {
     if (botMode) {
       handleBotPlayCards(cardIds, declaration);
     } else {
+      setHandCards(prev => prev.filter(c => !cardIds.includes(c.id)));
       socketClient.playCards(roomId, cardIds, declaration);
     }
   };
