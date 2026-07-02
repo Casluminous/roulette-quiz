@@ -1,19 +1,19 @@
 import { v4 as uuidv4 } from 'uuid';
 import { Server } from 'socket.io';
-import { QuestionManager } from './QuestionManager';
+import { DeckManager } from './DeckManager';
 import { RoomManager } from './RoomManager';
-import { GameState, Gun, Question } from './types';
+import { GameState, Gun, Card, TableType } from './types';
 
 export class GameManager {
   private roomManager: RoomManager;
   private io: Server;
-  private questionManager: QuestionManager;
+  private deckManager: DeckManager;
   private games: Map<string, GameState> = new Map();
 
   constructor(roomManager: RoomManager, io: Server) {
     this.roomManager = roomManager;
     this.io = io;
-    this.questionManager = new QuestionManager();
+    this.deckManager = new DeckManager();
   }
 
   startGame(roomId: string): void {
@@ -28,12 +28,14 @@ export class GameManager {
         ...p,
         hand: [],
         isAlive: true,
+        hasCards: true,
       })),
       currentTurn: 0,
+      tableType: 'king',
+      deck: [],
+      tablePile: [],
       round: 1,
       gun: this.createGun(),
-      usedCards: [],
-      stats: {},
     };
 
     this.games.set(roomId, gameState);
@@ -43,7 +45,7 @@ export class GameManager {
       players: gameState.players.map(p => ({
         id: p.id,
         name: p.name,
-        cardsCount: 4,
+        cardsCount: 5,
         isAlive: true,
         shotsFired: 0,
       })),
@@ -58,7 +60,6 @@ export class GameManager {
   private createGun(): Gun {
     const chambers = Array(6).fill(false);
     chambers[Math.floor(Math.random() * 6)] = true;
-
     return {
       chambers,
       currentPosition: 0,
@@ -70,29 +71,32 @@ export class GameManager {
     const game = this.games.get(roomId);
     if (!game) return;
 
-    const totalQuestions = this.questionManager.questions.length;
-    if (game.usedCards.length > totalQuestions - 16) {
-      game.usedCards = [];
-    }
+    const alivePlayers = game.players.filter(p => p.isAlive);
+    const { deck, tableType } = this.deckManager.createRoundDeck(alivePlayers.length);
+    game.deck = deck;
+    game.tableType = tableType;
+    game.tablePile = [];
 
-    console.log('Dealing cards for room:', roomId);
-
-    game.players.forEach(player => {
-      if (player.isAlive) {
-        player.hand = this.questionManager.getCards(4, game.usedCards);
-        game.usedCards.push(...player.hand.map(c => c.id));
-        console.log(`Dealt 4 cards to ${player.name}`);
-      }
+    alivePlayers.forEach(player => {
+      const { cards, remaining } = this.deckManager.dealCards(game.deck, 5);
+      player.hand = cards;
+      player.hasCards = true;
+      game.deck = remaining;
     });
 
     game.players.forEach(player => {
       if (player.isAlive) {
         const socket = this.io.sockets.sockets.get(player.id);
         if (socket) {
-          console.log(`Sending cards to ${player.name}`);
-          socket.emit('game:deal', { cards: player.hand });
-        } else {
-          console.log(`Socket not found for ${player.name}`);
+          socket.emit('game:deal', {
+            cards: player.hand,
+            tableType: game.tableType,
+            gun: {
+              bulletsFired: game.gun.bulletsFired,
+              currentPosition: game.gun.currentPosition,
+              bulletCount: 6 - game.gun.bulletsFired,
+            },
+          });
         }
       }
     });
@@ -104,147 +108,245 @@ export class GameManager {
         isAlive: p.isAlive,
         shotsFired: p.shotsFired,
       })),
+      tableType: game.tableType,
     });
 
-    game.phase = 'choosing';
-    
+    game.phase = 'playing';
     const currentPlayer = game.players[game.currentTurn];
     this.io.to(roomId).emit('game:turn', { playerId: currentPlayer.id });
   }
 
-  handleCardChoice(roomId: string, socketId: string, cardId: string): void {
+  handlePlayCards(roomId: string, socketId: string, cardIds: string[], declaration: TableType): void {
     const game = this.games.get(roomId);
-    if (!game || game.phase !== 'choosing') return;
+    if (!game || game.phase !== 'playing') return;
 
     const playerIndex = game.players.findIndex(p => p.id === socketId);
-    if (playerIndex === -1) return;
-    if (playerIndex !== game.currentTurn) return;
-    if (!game.players[playerIndex].isAlive) return;
+    if (playerIndex === -1 || playerIndex !== game.currentTurn) return;
 
     const player = game.players[playerIndex];
-    const card = player.hand.find(c => c.id === cardId);
+    if (!player.isAlive || player.hand.length === 0) return;
 
-    if (!card) return;
+    const validCards = cardIds.filter(id => player.hand.some(c => c.id === id));
+    if (validCards.length === 0 || validCards.length > 3) return;
 
-    player.hand = player.hand.filter(c => c.id !== cardId);
-
-    game.currentCard = card;
-    game.currentPlayer = playerIndex;
-    game.targetPlayer = this.getNextAlivePlayer(game, playerIndex);
-
-    game.phase = 'questioning';
-
-    const targetPlayer = game.players[game.targetPlayer];
-    const targetSocket = this.io.sockets.sockets.get(targetPlayer.id);
-    if (targetSocket) {
-      targetSocket.emit('game:question', {
-        card: { id: card.id, topic: card.topic, difficulty: card.difficulty, question: card.question, answers: card.answers },
-        timer: this.getTimerDuration(card.difficulty),
-        from: player.name,
-      });
-    }
-
-    this.io.to(roomId).emit('game:cardPlayed', {
-      playerId: socketId,
-      card: {
-        id: card.id,
-        topic: card.topic,
-        difficulty: card.difficulty,
-        question: card.question,
-      },
-    });
-
-    const timerDuration = this.getTimerDuration(card.difficulty);
-    game.answerTimeout = setTimeout(() => {
-      this.handleTimeout(roomId);
-    }, (timerDuration + 1) * 1000);
-  }
-
-  private handleTimeout(roomId: string): void {
-    const game = this.games.get(roomId);
-    if (!game || game.phase !== 'questioning') return;
-
-    const card = game.currentCard!;
-
-    game.phase = 'result';
-
-    this.io.to(roomId).emit('game:result', {
-      correct: false,
-      correctAnswer: card.correct,
-      answer: 'TIMEOUT',
-    });
-
-    game.phase = 'trigger';
-
-    setTimeout(() => {
-      const current = this.games.get(roomId);
-      if (current && current.phase === 'trigger') {
-        this.pullTrigger(roomId);
+    const playedCards: Card[] = [];
+    validCards.forEach(cardId => {
+      const card = player.hand.find(c => c.id === cardId);
+      if (card) {
+        playedCards.push(card);
+        player.hand = player.hand.filter(c => c.id !== cardId);
       }
-    }, 2000);
-  }
-
-  handleAnswer(roomId: string, socketId: string, answer: string): void {
-    const game = this.games.get(roomId);
-    if (!game || game.phase !== 'questioning') return;
-
-    const targetPlayer = game.players[game.targetPlayer!];
-    if (!targetPlayer || targetPlayer.id !== socketId) return;
-
-    if (game.answerTimeout) {
-      clearTimeout(game.answerTimeout);
-      game.answerTimeout = undefined;
-    }
-
-    const card = game.currentCard!;
-    const isCorrect = answer === card.correct;
-
-    game.phase = 'result';
-
-    this.io.to(roomId).emit('game:result', {
-      correct: isCorrect,
-      correctAnswer: card.correct,
-      answer,
     });
 
-    if (isCorrect) {
-      game.currentTurn = game.targetPlayer!;
-      game.phase = 'choosing';
+    game.tablePile = playedCards;
+    game.lastPlayCount = playedCards.length;
+
+    if (player.hand.length === 0) {
+      player.hasCards = false;
+    }
+
+    this.io.to(roomId).emit('game:cardsPlayed', {
+      playerName: player.name,
+      count: playedCards.length,
+      declaration,
+    });
+
+    this.io.to(roomId).emit('game:cardsUpdate', {
+      players: game.players.map(p => ({
+        id: p.id,
+        cardsCount: p.isAlive ? p.hand.length : 0,
+        isAlive: p.isAlive,
+        shotsFired: p.shotsFired,
+      })),
+      tableType: game.tableType,
+    });
+
+    game.phase = 'calling';
+
+    const nextPlayerIndex = this.getNextAlivePlayerWithCards(game, game.currentTurn);
+    if (nextPlayerIndex === -1) {
+      this.handleAllCardsPlayed(roomId);
+      return;
+    }
+
+    game.callingPlayer = nextPlayerIndex;
+    const nextPlayer = game.players[nextPlayerIndex];
+
+    this.io.to(roomId).emit('game:turn', {
+      playerId: nextPlayer.id,
+      phase: 'calling',
+      canCall: true,
+    });
+
+    game.callTimeout = setTimeout(() => {
+      this.handleCallTimeout(roomId);
+    }, 15000);
+  }
+
+  private handleCallTimeout(roomId: string): void {
+    const game = this.games.get(roomId);
+    if (!game || game.phase !== 'calling') return;
+
+    this.handleAcceptPlay(roomId, game.players[game.callingPlayer!].id);
+  }
+
+  handleAcceptPlay(roomId: string, socketId: string): void {
+    const game = this.games.get(roomId);
+    if (!game || game.phase !== 'calling') return;
+
+    const playerIndex = game.players.findIndex(p => p.id === socketId);
+    if (playerIndex === -1 || playerIndex !== game.callingPlayer) return;
+
+    if (game.callTimeout) {
+      clearTimeout(game.callTimeout);
+      game.callTimeout = undefined;
+    }
+
+    game.tablePile = [];
+    game.phase = 'playing';
+    game.currentTurn = playerIndex;
+
+    this.io.to(roomId).emit('game:accepted', {
+      playerName: game.players[playerIndex].name,
+    });
+
+    const currentPlayer = game.players[game.currentTurn];
+    if (currentPlayer.hand.length === 0) {
+      this.handleAllCardsPlayed(roomId);
+      return;
+    }
+
+    this.io.to(roomId).emit('game:turn', { playerId: currentPlayer.id });
+  }
+
+  handleCallLiar(roomId: string, socketId: string): void {
+    const game = this.games.get(roomId);
+    if (!game || game.phase !== 'calling') return;
+
+    const playerIndex = game.players.findIndex(p => p.id === socketId);
+    if (playerIndex === -1 || playerIndex !== game.callingPlayer) return;
+
+    if (game.callTimeout) {
+      clearTimeout(game.callTimeout);
+      game.callTimeout = undefined;
+    }
+
+    const previousPlayerIndex = this.getPreviousAlivePlayer(game, playerIndex);
+    const previousPlayer = game.players[previousPlayerIndex];
+    const playedCards = game.tablePile;
+
+    const isLying = playedCards.some(card => card.type !== game.tableType && card.type !== 'joker');
+    const hasDevil = playedCards.some(card => card.isDevil);
+
+    game.phase = 'revealing';
+
+    this.io.to(roomId).emit('game:callResult', {
+      caller: game.players[playerIndex].name,
+      wasLying: isLying,
+      revealedCards: playedCards,
+      previousPlayer: previousPlayer.name,
+    });
+
+    if (hasDevil) {
+      this.handleDevilCard(roomId, previousPlayerIndex, playerIndex);
+      return;
+    }
+
+    if (isLying) {
+      game.devilPlayerIndex = previousPlayerIndex;
     } else {
-      game.phase = 'trigger';
+      game.devilPlayerIndex = playerIndex;
     }
 
     setTimeout(() => {
-      const current = this.games.get(roomId);
-      if (!current) return;
+      this.pullTrigger(roomId);
+    }, 3000);
+  }
 
-      if (current.phase === 'trigger') {
-        this.pullTrigger(roomId);
-      } else if (current.phase === 'choosing') {
-        const currentPlayer = current.players[current.currentTurn];
-        if (currentPlayer.hand.length === 0) {
-          this.dealCards(roomId);
-        } else {
-          this.io.to(roomId).emit('game:turn', { playerId: currentPlayer.id });
-        }
+  private handleDevilCard(roomId: string, ownerIndex: number, callerIndex: number): void {
+    const game = this.games.get(roomId);
+    if (!game) return;
+
+    const owner = game.players[ownerIndex];
+    const affectedPlayers: string[] = [];
+
+    game.players.forEach((player, index) => {
+      if (index !== ownerIndex && player.isAlive) {
+        affectedPlayers.push(player.id);
       }
-    }, 2000);
+    });
+
+    this.io.to(roomId).emit('game:devilReveal', {
+      ownerName: owner.name,
+      affectedPlayers: affectedPlayers.map(id => game.players.find(p => p.id === id)?.name || ''),
+    });
+
+    game.devilPlayerIndex = ownerIndex;
+
+    setTimeout(() => {
+      this.pullTriggerForMultiple(roomId, ownerIndex, affectedPlayers);
+    }, 3000);
+  }
+
+  private pullTriggerForMultiple(roomId: string, firstPlayerIndex: number, otherPlayerIds: string[]): void {
+    const game = this.games.get(roomId);
+    if (!game) return;
+
+    const allToTrigger = [firstPlayerIndex, ...otherPlayerIds.map(id => game.players.findIndex(p => p.id === id))];
+
+    this.processTriggerSequence(roomId, allToTrigger, 0);
+  }
+
+  private processTriggerSequence(roomId: string, playerIndices: number[], currentIndex: number): void {
+    const game = this.games.get(roomId);
+    if (!game) return;
+
+    if (currentIndex >= playerIndices.length) {
+      const anyDied = game.players.some(p => !p.isAlive);
+      this.afterTrigger(roomId, anyDied);
+      return;
+    }
+
+    const playerIndex = playerIndices[currentIndex];
+    const player = game.players[playerIndex];
+
+    if (!player.isAlive) {
+      this.processTriggerSequence(roomId, playerIndices, currentIndex + 1);
+      return;
+    }
+
+    game.devilPlayerIndex = playerIndex;
+    this.pullTriggerSingle(roomId, () => {
+      this.processTriggerSequence(roomId, playerIndices, currentIndex + 1);
+    });
   }
 
   private pullTrigger(roomId: string): void {
     const game = this.games.get(roomId);
-    if (!game) return;
+    if (!game || game.devilPlayerIndex === undefined) return;
+
+    const targetPlayer = game.players[game.devilPlayerIndex];
+
+    this.pullTriggerSingle(roomId, () => {
+      this.afterTrigger(roomId, !targetPlayer.isAlive);
+    });
+  }
+
+  private pullTriggerSingle(roomId: string, callback: () => void): void {
+    const game = this.games.get(roomId);
+    if (!game || game.devilPlayerIndex === undefined) return;
 
     const gun = game.gun;
     const bullet = gun.chambers[gun.currentPosition];
     gun.bulletsFired++;
     gun.currentPosition = (gun.currentPosition + 1) % 6;
 
-    const targetPlayer = game.players[game.targetPlayer!];
+    const targetPlayer = game.players[game.devilPlayerIndex];
     targetPlayer.shotsFired++;
 
     if (bullet) {
       targetPlayer.isAlive = false;
+      targetPlayer.hasCards = false;
 
       this.io.to(roomId).emit('game:trigger', {
         alive: false,
@@ -254,31 +356,6 @@ export class GameManager {
         shotsFired: targetPlayer.shotsFired,
         nextRound: false,
       });
-
-      const alivePlayers = game.players.filter(p => p.isAlive);
-      if (alivePlayers.length === 1) {
-        setTimeout(() => {
-          const current = this.games.get(roomId);
-          if (!current) return;
-          this.io.to(roomId).emit('game:over', {
-            winner: alivePlayers[0].name,
-            winnerId: alivePlayers[0].id,
-            stats: current.stats,
-          });
-          this.games.delete(roomId);
-        }, 3000);
-      } else {
-        setTimeout(() => {
-          const current = this.games.get(roomId);
-          if (!current) return;
-          current.round++;
-          current.gun = this.createGun();
-          current.currentTurn = this.getNextAlivePlayer(current, current.targetPlayer!);
-          current.phase = 'choosing';
-          this.dealCards(roomId);
-          this.io.to(roomId).emit('game:newRound', { round: current.round });
-        }, 3000);
-      }
     } else {
       this.io.to(roomId).emit('game:trigger', {
         alive: true,
@@ -286,32 +363,90 @@ export class GameManager {
         shotsFired: targetPlayer.shotsFired,
         nextRound: true,
       });
-
-      setTimeout(() => {
-        const current = this.games.get(roomId);
-        if (!current) return;
-        current.round++;
-        current.currentTurn = current.targetPlayer!;
-        current.phase = 'choosing';
-        this.dealCards(roomId);
-        this.io.to(roomId).emit('game:newRound', { round: current.round });
-      }, 3000);
     }
+
+    setTimeout(callback, 3000);
   }
 
-  private getNextAlivePlayer(game: GameState, fromIndex: number): number {
+  private afterTrigger(roomId: string, playerDied: boolean): void {
+    const game = this.games.get(roomId);
+    if (!game) return;
+
+    const alivePlayers = game.players.filter(p => p.isAlive);
+
+    if (alivePlayers.length <= 1) {
+      this.io.to(roomId).emit('game:over', {
+        winner: alivePlayers[0]?.name || 'No one',
+        winnerId: alivePlayers[0]?.id || '',
+      });
+      this.games.delete(roomId);
+      return;
+    }
+
+    game.round++;
+
+    if (playerDied) {
+      game.gun = this.createGun();
+    }
+
+    const nextTurnIndex = this.getNextAlivePlayerWithCards(game, game.currentTurn);
+    game.currentTurn = nextTurnIndex !== -1 ? nextTurnIndex : game.players.findIndex(p => p.isAlive);
+    game.devilPlayerIndex = undefined;
+    game.tablePile = [];
+
+    this.io.to(roomId).emit('game:newRound', {
+      round: game.round,
+      gun: {
+        bulletsFired: game.gun.bulletsFired,
+        currentPosition: game.gun.currentPosition,
+        bulletCount: 6 - game.gun.bulletsFired,
+      },
+    });
+
+    this.dealCards(roomId);
+  }
+
+  private handleAllCardsPlayed(roomId: string): void {
+    const game = this.games.get(roomId);
+    if (!game) return;
+
+    const playersWithCards = game.players.filter(p => p.isAlive && p.hasCards);
+
+    if (playersWithCards.length <= 1) {
+      this.io.to(roomId).emit('game:roundEnd', {
+        reason: 'all_cards_played',
+      });
+      this.afterTrigger(roomId, false);
+      return;
+    }
+
+    this.dealCards(roomId);
+  }
+
+  private getNextAlivePlayerWithCards(game: GameState, fromIndex: number): number {
     let next = (fromIndex + 1) % game.players.length;
     let checked = 0;
-    while (!game.players[next].isAlive && checked < game.players.length) {
+    while (checked < game.players.length) {
+      if (game.players[next].isAlive && game.players[next].hasCards) {
+        return next;
+      }
       next = (next + 1) % game.players.length;
       checked++;
     }
-    return next;
+    return -1;
   }
 
-  private getTimerDuration(difficulty: string): number {
-    const timers: Record<string, number> = { easy: 10, medium: 7, hard: 5 };
-    return timers[difficulty] || 10;
+  private getPreviousAlivePlayer(game: GameState, fromIndex: number): number {
+    let prev = (fromIndex - 1 + game.players.length) % game.players.length;
+    let checked = 0;
+    while (checked < game.players.length) {
+      if (game.players[prev].isAlive) {
+        return prev;
+      }
+      prev = (prev - 1 + game.players.length) % game.players.length;
+      checked++;
+    }
+    return fromIndex;
   }
 
   handleLeaveAfterDeath(roomId: string, socketId: string): void {
@@ -330,20 +465,19 @@ export class GameManager {
       playerId: socketId,
       playerName: player.name,
     });
-
-    console.log(`Player ${player.name} left after death in room ${roomId}`);
   }
 
   handleDisconnect(socketId: string): void {
     for (const [roomId, game] of this.games.entries()) {
       const playerIndex = game.players.findIndex(p => p.id === socketId);
       if (playerIndex !== -1) {
-        if (game.answerTimeout) {
-          clearTimeout(game.answerTimeout);
-          game.answerTimeout = undefined;
+        if (game.callTimeout) {
+          clearTimeout(game.callTimeout);
+          game.callTimeout = undefined;
         }
 
         game.players[playerIndex].isAlive = false;
+        game.players[playerIndex].hasCards = false;
 
         this.io.to(roomId).emit('game:playerLeft', {
           playerId: socketId,

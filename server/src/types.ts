@@ -1,20 +1,22 @@
-export interface Question {
+export type CardType = 'king' | 'queen' | 'ace' | 'joker';
+
+export type TableType = 'king' | 'queen' | 'ace';
+
+export interface Card {
   id: string;
-  topic: string;
-  difficulty: 'easy' | 'medium' | 'hard';
-  question: string;
-  answers: Record<string, string>;
-  correct: string;
+  type: CardType;
+  isDevil?: boolean;
 }
 
 export interface Player {
   id: string;
   name: string;
   isReady: boolean;
-  hand: Question[];
+  hand: Card[];
   isAlive: boolean;
   left?: boolean;
   shotsFired: number;
+  hasCards: boolean;
 }
 
 export interface Room {
@@ -36,21 +38,13 @@ export interface GameState {
   phase: string;
   players: Player[];
   currentTurn: number;
+  tableType: TableType;
+  deck: Card[];
+  tablePile: Card[];
   round: number;
   gun: Gun;
-  usedCards: string[];
-  stats: Record<string, unknown>;
-  currentCard?: Question;
-  currentPlayer?: number;
-  targetPlayer?: number;
-  answerTimeout?: NodeJS.Timeout;
-}
-
-export interface CardData {
-  id: string;
-  topic: string;
-  difficulty: string;
-  question: string;
-  answers: Record<string, string>;
-  correct: string;
+  callingPlayer?: number;
+  lastPlayCount?: number;
+  devilPlayerIndex?: number;
+  callTimeout?: NodeJS.Timeout;
 }

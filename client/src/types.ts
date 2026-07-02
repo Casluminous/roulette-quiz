@@ -1,3 +1,12 @@
+export type CardType = 'king' | 'queen' | 'ace' | 'joker';
+export type TableType = 'king' | 'queen' | 'ace';
+
+export interface Card {
+  id: string;
+  type: CardType;
+  isDevil?: boolean;
+}
+
 export interface Player {
   id: string;
   name: string;
@@ -5,35 +14,6 @@ export interface Player {
   cardsCount?: number;
   isAlive?: boolean;
   shotsFired?: number;
-}
-
-export interface Question {
-  id: string;
-  topic: string;
-  difficulty: 'easy' | 'medium' | 'hard';
-  question: string;
-  answers: Record<string, string>;
-  correct: string;
-}
-
-export interface CardData {
-  id: string;
-  topic: string;
-  difficulty: string;
-  question: string;
-  answers: Record<string, string>;
-  correct: string;
-}
-
-export interface ActiveQuestion {
-  card: Question;
-  timer: number;
-  from: string;
-}
-
-export interface QuestionResult {
-  correct: boolean;
-  correctAnswer: string;
 }
 
 export interface TriggerResult {
@@ -49,6 +29,25 @@ export interface WinnerInfo {
   isLocalWinner: boolean;
 }
 
-export type GamePhase = 'waiting' | 'choosing' | 'questioning' | 'answering' | 'result' | 'trigger' | 'game_over';
+export interface CallResult {
+  caller: string;
+  wasLying: boolean;
+  revealedCards: Card[];
+  previousPlayer?: string;
+  liarName?: string;
+}
+
+export interface DevilReveal {
+  ownerName: string;
+  affectedPlayers: string[];
+}
+
+export interface GunState {
+  bulletsFired: number;
+  currentPosition: number;
+  bulletCount: number;
+}
+
+export type GamePhase = 'waiting' | 'dealing' | 'playing' | 'calling' | 'revealing' | 'trigger' | 'game_over';
 export type Screen = 'menu' | 'lobby' | 'game' | 'gameover';
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected';

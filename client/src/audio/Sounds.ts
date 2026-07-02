@@ -55,6 +55,35 @@ export const Sounds = {
     setTimeout(() => beep(900, 0.08, 'sine', 0.15), 50);
   },
 
+  cardSlam() {
+    noise(0.15, 0.4);
+    beep(200, 0.1, 'square', 0.3);
+    setTimeout(() => beep(150, 0.15, 'sawtooth', 0.2), 50);
+  },
+
+  liarCall() {
+    beep(880, 0.1, 'square', 0.3);
+    setTimeout(() => beep(1100, 0.1, 'square', 0.3), 80);
+    setTimeout(() => beep(880, 0.15, 'square', 0.25), 160);
+  },
+
+  revealCards() {
+    beep(400, 0.08, 'triangle', 0.2);
+    setTimeout(() => beep(500, 0.08, 'triangle', 0.2), 60);
+    setTimeout(() => beep(600, 0.1, 'triangle', 0.2), 120);
+  },
+
+  devilReveal() {
+    beep(200, 0.2, 'sawtooth', 0.35);
+    setTimeout(() => beep(150, 0.3, 'sawtooth', 0.3), 100);
+    setTimeout(() => beep(100, 0.4, 'sawtooth', 0.25), 200);
+  },
+
+  acceptPlay() {
+    beep(600, 0.08, 'sine', 0.15);
+    setTimeout(() => beep(800, 0.1, 'sine', 0.15), 60);
+  },
+
   correct() {
     beep(523, 0.15, 'sine', 0.25);
     setTimeout(() => beep(659, 0.15, 'sine', 0.25), 100);

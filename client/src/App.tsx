@@ -4,7 +4,7 @@ import { MainMenu } from './components/MainMenu';
 import { Lobby } from './components/Lobby';
 import { GameBoard } from './components/GameBoard';
 import { GameOver } from './components/GameOver';
-import { Screen, ConnectionStatus, GamePhase, Player, CardData, ActiveQuestion, QuestionResult, TriggerResult, WinnerInfo } from './types';
+import { Screen, ConnectionStatus, GamePhase, Player, Card, TriggerResult, WinnerInfo, TableType, CallResult, DevilReveal, GunState } from './types';
 import { Sounds } from './audio/Sounds';
 import { useBotGame } from './hooks/useBotGame';
 
@@ -21,12 +21,16 @@ export default function App() {
   const [round, setRound] = useState<number>(1);
   const [phase, setPhase] = useState<GamePhase>('waiting');
   const [currentTurnId, setCurrentTurnId] = useState<string>('');
-  const [handCards, setHandCards] = useState<CardData[]>([]);
-  const [playedCard, setPlayedCard] = useState<CardData | null>(null);
-  const [activeQuestion, setActiveQuestion] = useState<ActiveQuestion | null>(null);
-  const [questionResult, setQuestionResult] = useState<QuestionResult | null>(null);
+  const [handCards, setHandCards] = useState<Card[]>([]);
+  const [tableType, setTableType] = useState<TableType>('king');
+  const [playedCount, setPlayedCount] = useState<number>(0);
+  const [playedBy, setPlayedBy] = useState<string>('');
+  const [callResult, setCallResult] = useState<CallResult | null>(null);
+  const [devilReveal, setDevilReveal] = useState<DevilReveal | null>(null);
   const [triggerResult, setTriggerResult] = useState<TriggerResult | null>(null);
   const [winnerInfo, setWinnerInfo] = useState<WinnerInfo | null>(null);
+  const [canCall, setCanCall] = useState<boolean>(false);
+  const [gunState, setGunState] = useState<GunState>({ bulletsFired: 0, currentPosition: 0, bulletCount: 6 });
 
   const botCallbacks = {
     setScreen,
@@ -34,20 +38,23 @@ export default function App() {
     setPhase,
     setCurrentTurnId,
     setHandCards,
-    setPlayedCard,
-    setActiveQuestion,
-    setQuestionResult,
     setTriggerResult,
     setPlayers,
     setWinnerInfo,
+    setTableType,
+    setPlayedCount,
+    setPlayedBy,
+    setCallResult,
+    setCanCall,
   };
 
   const {
     botMode,
     startBotGame,
     handleBotDisconnect,
-    handleBotCardChoice,
-    handleBotModePlayerAnswer,
+    handleBotPlayCards,
+    handleBotCallLiar,
+    handleBotAcceptPlay,
     botHudMessage,
     isSpectating,
     syncHandCards,
@@ -61,7 +68,6 @@ export default function App() {
     startBotGame(count);
   }, [startBotGame]);
 
-  // Sync state to bot refs
   useEffect(() => { syncHandCards(handCards); }, [handCards, syncHandCards]);
   useEffect(() => { syncPlayers(players); }, [players, syncPlayers]);
   useEffect(() => { syncPhase(phase); }, [phase, syncPhase]);
@@ -96,10 +102,10 @@ export default function App() {
     setPlayers([]);
     setLocalPlayerId('');
     setHandCards([]);
-    setPlayedCard(null);
-    setActiveQuestion(null);
-    setQuestionResult(null);
+    setCallResult(null);
+    setDevilReveal(null);
     setTriggerResult(null);
+    setCanCall(false);
   };
 
   const handleLeaveAfterDeath = () => {
@@ -108,6 +114,30 @@ export default function App() {
     } else {
       socketClient.leaveAfterDeath(roomId);
       handleDisconnect();
+    }
+  };
+
+  const handlePlayCards = (cardIds: string[], declaration: TableType) => {
+    if (botMode) {
+      handleBotPlayCards(cardIds, declaration);
+    } else {
+      socketClient.playCards(roomId, cardIds, declaration);
+    }
+  };
+
+  const handleCallLiar = () => {
+    if (botMode) {
+      handleBotCallLiar();
+    } else {
+      socketClient.callLiar(roomId);
+    }
+  };
+
+  const handleAcceptPlay = () => {
+    if (botMode) {
+      handleBotAcceptPlay();
+    } else {
+      socketClient.acceptPlay(roomId);
     }
   };
 
@@ -138,61 +168,57 @@ export default function App() {
       setPlayers(data.players);
       setRound(data.round || 1);
       setPhase('waiting');
-      setPlayedCard(null);
-      setActiveQuestion(null);
-      setQuestionResult(null);
+      setCallResult(null);
+      setDevilReveal(null);
       setTriggerResult(null);
+      setCanCall(false);
       setScreen('game');
     });
 
-    socketClient.on('game:deal', (data: { cards: CardData[] }) => {
+    socketClient.on('game:deal', (data: { cards: Card[]; tableType: TableType; gun?: GunState }) => {
       setHandCards(data.cards);
-      setPhase('choosing');
-    });
-
-    socketClient.on('game:turn', (data: { playerId: string }) => {
-      setCurrentTurnId(data.playerId);
-      setPhase('choosing');
-      setPlayedCard(null);
-    });
-
-    socketClient.on('game:cardPlayed', (data: { playerId: string; card: CardData }) => {
-      setPlayedCard(data.card);
-      setPhase('questioning');
-
-      setPlayers(prev => prev.map(p => {
-        if (p.id === data.playerId) {
-          return { ...p, cardsCount: (p.cardsCount || 4) - 1 };
-        }
-        return p;
-      }));
-    });
-
-    socketClient.on('game:question', (data: { card: any; timer: number; from: string }) => {
-      setActiveQuestion({
-        card: data.card,
-        timer: data.timer,
-        from: data.from
-      });
-      setPhase('answering');
-    });
-
-    socketClient.on('game:result', (data: { correct: boolean; correctAnswer: string }) => {
-      if (data.correct) {
-        Sounds.correct();
-      } else {
-        Sounds.wrong();
+      setTableType(data.tableType);
+      setPhase('playing');
+      setCallResult(null);
+      setDevilReveal(null);
+      if (data.gun) {
+        setGunState(data.gun);
       }
-      setQuestionResult({
-        correct: data.correct,
-        correctAnswer: data.correctAnswer
-      });
-      setPhase('result');
+    });
 
-      setTimeout(() => {
-        setActiveQuestion(null);
-        setQuestionResult(null);
-      }, 2500);
+    socketClient.on('game:turn', (data: { playerId: string; phase?: string; canCall?: boolean }) => {
+      setCurrentTurnId(data.playerId);
+      setCanCall(data.canCall || false);
+      if (data.phase) {
+        setPhase(data.phase as GamePhase);
+      } else {
+        setPhase('playing');
+      }
+      setCallResult(null);
+      setDevilReveal(null);
+    });
+
+    socketClient.on('game:cardsPlayed', (data: { playerName: string; count: number; declaration: TableType }) => {
+      setPlayedCount(data.count);
+      setPlayedBy(data.playerName);
+      setTableType(data.declaration);
+      setPhase('calling');
+    });
+
+    socketClient.on('game:accepted', (data: { playerName: string }) => {
+      setPlayedCount(0);
+      setPlayedBy('');
+    });
+
+    socketClient.on('game:callResult', (data: CallResult) => {
+      setCallResult(data);
+      setPhase('revealing');
+      Sounds.revealCards();
+    });
+
+    socketClient.on('game:devilReveal', (data: DevilReveal) => {
+      setDevilReveal(data);
+      Sounds.devilReveal();
     });
 
     socketClient.on('game:trigger', (data: TriggerResult) => {
@@ -211,6 +237,7 @@ export default function App() {
             return {
               ...p,
               isAlive: data.alive ? p.isAlive : false,
+              cardsCount: data.alive ? p.cardsCount : 0,
               shotsFired: data.shotsFired ?? p.shotsFired,
             };
           }
@@ -220,12 +247,19 @@ export default function App() {
 
       setTimeout(() => {
         setTriggerResult(null);
+        setCallResult(null);
+        setDevilReveal(null);
       }, 5000);
     });
 
-    socketClient.on('game:newRound', (data: { round: number }) => {
+    socketClient.on('game:newRound', (data: { round: number; gun?: GunState }) => {
       Sounds.newRound();
       setRound(data.round);
+      setCallResult(null);
+      setDevilReveal(null);
+      if (data.gun) {
+        setGunState(data.gun);
+      }
     });
 
     socketClient.on('game:over', (data: { winner: string; winnerId?: string }) => {
@@ -255,7 +289,7 @@ export default function App() {
       setPlayers(prev => prev.filter(p => p.id !== data.playerId));
     });
 
-    socketClient.on('game:cardsUpdate', (data: { players: { id: string; cardsCount: number; isAlive: boolean; shotsFired: number }[] }) => {
+    socketClient.on('game:cardsUpdate', (data: { players: { id: string; cardsCount: number; isAlive: boolean; shotsFired: number }[]; tableType?: TableType }) => {
       setPlayers(prev => prev.map(p => {
         const update = data.players.find((u: any) => u.id === p.id);
         if (update) {
@@ -263,6 +297,14 @@ export default function App() {
         }
         return p;
       }));
+      if (data.tableType) {
+        setTableType(data.tableType);
+      }
+    });
+
+    socketClient.on('game:roundEnd', (data: { reason: string }) => {
+      setPlayedCount(0);
+      setPlayedBy('');
     });
 
     socketClient.on('error', (data: { message: string }) => {
@@ -270,7 +312,7 @@ export default function App() {
     });
 
     return () => {
-      ['room:created', 'room:joined', 'room:players', 'room:left', 'game:start', 'game:deal', 'game:turn', 'game:cardPlayed', 'game:question', 'game:result', 'game:trigger', 'game:newRound', 'game:over', 'game:playerLeft', 'game:playerLeftAfterDeath', 'game:cardsUpdate', 'error'].forEach(event => {
+      ['room:created', 'room:joined', 'room:players', 'room:left', 'game:start', 'game:deal', 'game:turn', 'game:cardsPlayed', 'game:callResult', 'game:devilReveal', 'game:trigger', 'game:newRound', 'game:over', 'game:playerLeft', 'game:playerLeftAfterDeath', 'game:cardsUpdate', 'game:accepted', 'game:roundEnd', 'error'].forEach(event => {
         socketClient.clearListeners(event);
       });
     };
@@ -303,14 +345,19 @@ export default function App() {
           localId={localPlayerId}
           currentTurnId={currentTurnId}
           handCards={handCards}
-          playedCard={playedCard}
-          activeQuestion={activeQuestion}
-          questionResult={questionResult}
+          tableType={tableType}
+          playedCount={playedCount}
+          playedBy={playedBy}
+          callResult={callResult}
+          devilReveal={devilReveal}
           triggerResult={triggerResult}
+          gunState={gunState}
+          canCall={canCall}
           roomId={roomId}
           onLeaveAfterDeath={handleLeaveAfterDeath}
-          onCardChoice={botMode ? (cardId: string) => handleBotCardChoice(cardId, phase, currentTurnId, handCards) : undefined}
-          onAnswerSubmit={botMode ? (letter: string) => handleBotModePlayerAnswer(letter, phase, activeQuestion) : undefined}
+          onPlayCards={botMode ? handleBotPlayCards : handlePlayCards}
+          onCallLiar={botMode ? handleBotCallLiar : handleCallLiar}
+          onAcceptPlay={botMode ? handleBotAcceptPlay : handleAcceptPlay}
           botHudMessage={botMode ? botHudMessage : null}
           isBotSpectating={botMode ? isSpectating : false}
         />

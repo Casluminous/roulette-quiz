@@ -50,6 +50,7 @@ export class RoomManager {
         hand: [],
         isAlive: true,
         shotsFired: 0,
+        hasCards: true,
       }],
       state: 'waiting',
       createdAt: Date.now(),
@@ -92,6 +93,7 @@ export class RoomManager {
       hand: [],
       isAlive: true,
       shotsFired: 0,
+      hasCards: true,
     });
 
     this.playerRooms.set(socketId, roomId);

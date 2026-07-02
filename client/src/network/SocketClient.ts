@@ -85,9 +85,9 @@ class SocketClient {
 
     this.socket.on('game:start', (data: any) => this.emit('game:start', data));
     this.socket.on('game:deal', (data: any) => this.emit('game:deal', data));
-    this.socket.on('game:cardPlayed', (data: any) => this.emit('game:cardPlayed', data));
-    this.socket.on('game:question', (data: any) => this.emit('game:question', data));
-    this.socket.on('game:result', (data: any) => this.emit('game:result', data));
+    this.socket.on('game:cardsPlayed', (data: any) => this.emit('game:cardsPlayed', data));
+    this.socket.on('game:callResult', (data: any) => this.emit('game:callResult', data));
+    this.socket.on('game:devilReveal', (data: any) => this.emit('game:devilReveal', data));
     this.socket.on('game:trigger', (data: any) => this.emit('game:trigger', data));
     this.socket.on('game:newRound', (data: any) => this.emit('game:newRound', data));
     this.socket.on('game:over', (data: any) => this.emit('game:over', data));
@@ -95,6 +95,8 @@ class SocketClient {
     this.socket.on('game:playerLeftAfterDeath', (data: any) => this.emit('game:playerLeftAfterDeath', data));
     this.socket.on('game:cardsUpdate', (data: any) => this.emit('game:cardsUpdate', data));
     this.socket.on('game:turn', (data: any) => this.emit('game:turn', data));
+    this.socket.on('game:accepted', (data: any) => this.emit('game:accepted', data));
+    this.socket.on('game:roundEnd', (data: any) => this.emit('game:roundEnd', data));
 
     this.socket.on('error', (data: any) => this.emit('error', data));
   }
@@ -149,12 +151,16 @@ class SocketClient {
     this.send('room:leave', { roomId });
   }
 
-  chooseCard(roomId: string, cardId: string): void {
-    this.send('game:choose', { roomId, cardId });
+  playCards(roomId: string, cardIds: string[], declaration: string): void {
+    this.send('game:playCards', { roomId, cardIds, declaration });
   }
 
-  submitAnswer(roomId: string, answer: string): void {
-    this.send('game:answer', { roomId, answer });
+  callLiar(roomId: string): void {
+    this.send('game:callLiar', { roomId });
+  }
+
+  acceptPlay(roomId: string): void {
+    this.send('game:acceptPlay', { roomId });
   }
 
   leaveAfterDeath(roomId: string): void {

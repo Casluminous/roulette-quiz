@@ -93,19 +93,13 @@ io.on('connection', (socket) => {
 
   socket.on('room:join', (data: { roomId: string; playerName: string }) => {
     const { roomId, playerName } = data;
-    console.log(`[JOIN] Player ${playerName} (${socket.id}) joining room ${roomId}`);
     const result = roomManager.joinRoom(roomId, socket.id, playerName);
-    console.log('[JOIN] Result:', result);
 
     if (result.success) {
       socket.join(roomId);
-      console.log(`[JOIN] Socket ${socket.id} joined room ${roomId}`);
       socket.emit('room:joined', { roomId, playerId: socket.id });
-      
       const room = roomManager.getRoom(roomId);
-      console.log(`[JOIN] Room has ${room?.players.length} players:`, room?.players.map(p => p.name));
       io.to(roomId).emit('room:players', { players: result.players });
-      console.log('[JOIN] Emitted room:players to room');
     } else {
       socket.emit('error', { message: result.error });
     }
@@ -113,19 +107,13 @@ io.on('connection', (socket) => {
 
   socket.on('room:ready', (data: { roomId: string }) => {
     const { roomId } = data;
-    console.log(`[READY] Player ${socket.id} toggling ready in room ${roomId}`);
     const result = roomManager.toggleReady(roomId, socket.id);
-    console.log('[READY] Result:', result);
 
     if (result.success) {
       const room = roomManager.getRoom(roomId);
-      console.log(`[READY] Room has ${room?.players.length} players`);
-      
       io.to(roomId).emit('room:players', { players: result.players });
-      console.log('[READY] Emitted room:players');
 
       if (result.allReady && result.players && result.players.length >= 2) {
-        console.log('[READY] All players ready! Starting game...');
         gameManager.startGame(roomId);
       }
     }
@@ -142,14 +130,19 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('game:choose', (data: { roomId: string; cardId: string }) => {
-    const { roomId, cardId } = data;
-    gameManager.handleCardChoice(roomId, socket.id, cardId);
+  socket.on('game:playCards', (data: { roomId: string; cardIds: string[]; declaration: string }) => {
+    const { roomId, cardIds, declaration } = data;
+    gameManager.handlePlayCards(roomId, socket.id, cardIds, declaration as any);
   });
 
-  socket.on('game:answer', (data: { roomId: string; answer: string }) => {
-    const { roomId, answer } = data;
-    gameManager.handleAnswer(roomId, socket.id, answer);
+  socket.on('game:callLiar', (data: { roomId: string }) => {
+    const { roomId } = data;
+    gameManager.handleCallLiar(roomId, socket.id);
+  });
+
+  socket.on('game:acceptPlay', (data: { roomId: string }) => {
+    const { roomId } = data;
+    gameManager.handleAcceptPlay(roomId, socket.id);
   });
 
   socket.on('game:leaveAfterDeath', (data: { roomId: string }) => {

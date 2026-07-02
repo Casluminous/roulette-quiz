@@ -1,7 +1,7 @@
 {
-  "name": "roulette-quiz",
+  "name": "liars-bar-quiz",
   "version": "1.0.0",
-  "description": "Multiplayer party game combining quiz with Russian Roulette",
+  "description": "Multiplayer party game combining Liar's Deck bluffing with Russian Roulette",
   "main": "client/main.js",
   "scripts": {
     "start": "electron .",
