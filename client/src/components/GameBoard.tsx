@@ -141,7 +141,7 @@ export function GameBoard({
   }, [round]);
 
   useEffect(() => {
-    if (handCards.length > 0 && handCards.length !== prevHandCardsLength.current && phase === 'playing') {
+    if (handCards.length > 0 && handCards.length > prevHandCardsLength.current && phase === 'playing') {
       prevHandCardsLength.current = handCards.length;
       setIsDealing(true);
       setRevealedCards(new Set());
