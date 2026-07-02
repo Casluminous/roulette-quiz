@@ -3,6 +3,7 @@ services:
     name: roulette-quiz
     runtime: node
     plan: free
+    rootDir: .
     buildCommand: cd client && npm install && npm run build && cd ../server && npm install && npm run build
     startCommand: cd server && NODE_ENV=production node dist/index.js
     envVars:
