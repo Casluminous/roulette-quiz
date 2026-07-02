@@ -69,7 +69,7 @@ const getCardTypeStyle = (type: CardType): { color: string; label: string; icon:
     case 'joker':
       return { color: '#3b82f6', label: 'JOKER', icon: '★' };
     case 'devil':
-      return { color: '#dc2626', label: 'DEVIL', icon: '😈' };
+      return { color: '#dc2626', label: 'DEVIL', icon: '🗡' };
     default:
       return { color: 'var(--text-theme)', label: '??', icon: '?' };
   }
@@ -619,13 +619,13 @@ export function GameBoard({
                         </span>
                       </div>
                       <div className="flex-1 flex items-center justify-center py-2 overflow-y-auto pr-0.5">
-                        <div className="text-5xl text-text-theme">
+                        <div className="text-6xl text-text-theme">
                           {cardStyle.icon}
                         </div>
                       </div>
                       <div className="flex justify-between items-center w-full border-t border-border-theme pt-1.5 text-[9px] font-mono tracking-widest opacity-50">
                         <span className="uppercase">{card.type}</span>
-                        {card.isDevil && (
+                        {card.type === 'devil' && (
                           <span className="text-red-theme font-extrabold">DEVIL</span>
                         )}
                       </div>
@@ -822,13 +822,13 @@ export function GameBoard({
                         borderColor: `${cardStyle.color}cc`,
                       }}
                     >
-                      <div className="text-3xl" style={{ color: cardStyle.color }}>
+                      <div className="text-4xl" style={{ color: cardStyle.color }}>
                         {cardStyle.icon}
                       </div>
                       <span className="text-[10px] font-bold font-mono mt-1" style={{ color: cardStyle.color }}>
                         {cardStyle.label}
                       </span>
-                      {card.isDevil && (
+                      {card.type === 'devil' && (
                         <span className="text-[8px] font-bold text-red-theme mt-1">DEVIL</span>
                       )}
                     </motion.div>

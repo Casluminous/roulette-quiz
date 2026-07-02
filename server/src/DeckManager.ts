@@ -45,7 +45,7 @@ export class DeckManager {
 
   markDevilCard(cards: Card[]): Card[] {
     return cards.map(card => {
-      if (card.type === 'joker') {
+      if (card.type === 'devil') {
         return { ...card, isDevil: true };
       }
       return card;
