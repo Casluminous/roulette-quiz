@@ -10,29 +10,42 @@ interface SlashEffectProps {
 function KnifeIcon({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 64 120" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
-      {/* Blade */}
+      {/* Blade — clean silver */}
       <path
-        d="M32 4 L42 60 L38 65 L32 110 L26 65 L22 60 Z"
+        d="M32 2 L44 58 L39 64 L32 112 L25 64 L20 58 Z"
         fill="url(#bladeGrad)"
-        stroke="#ff0040"
-        strokeWidth="1.5"
+        stroke="#c0c0c0"
+        strokeWidth="1"
       />
-      {/* Blade center line */}
-      <line x1="32" y1="10" x2="32" y2="105" stroke="#ff6080" strokeWidth="1" opacity="0.6" />
-      {/* Guard */}
-      <rect x="16" y="58" width="32" height="6" rx="2" fill="#1a1a2e" stroke="#ff0040" strokeWidth="1" />
+      {/* Blade highlight */}
+      <path
+        d="M32 8 L38 58 L32 60 Z"
+        fill="url(#bladeHighlight)"
+        opacity="0.4"
+      />
+      {/* Blade center ridge */}
+      <line x1="32" y1="6" x2="32" y2="108" stroke="#d0d0d0" strokeWidth="0.8" opacity="0.7" />
+      {/* Guard — dark metallic */}
+      <rect x="14" y="56" width="36" height="7" rx="2" fill="#2a2a3a" stroke="#888" strokeWidth="0.8" />
       {/* Handle */}
-      <rect x="26" y="64" width="12" height="28" rx="3" fill="#1a1a2e" stroke="#ff0040" strokeWidth="0.8" />
-      {/* Handle grip lines */}
-      <line x1="28" y1="70" x2="36" y2="70" stroke="#ff0040" strokeWidth="0.5" opacity="0.5" />
-      <line x1="28" y1="76" x2="36" y2="76" stroke="#ff0040" strokeWidth="0.5" opacity="0.5" />
-      <line x1="28" y1="82" x2="36" y2="82" stroke="#ff0040" strokeWidth="0.5" opacity="0.5" />
-      <line x1="28" y1="88" x2="36" y2="88" stroke="#ff0040" strokeWidth="0.5" opacity="0.5" />
+      <rect x="25" y="63" width="14" height="30" rx="3" fill="#1a1a28" stroke="#666" strokeWidth="0.6" />
+      {/* Handle grip */}
+      <line x1="27" y1="70" x2="37" y2="70" stroke="#555" strokeWidth="0.5" opacity="0.6" />
+      <line x1="27" y1="76" x2="37" y2="76" stroke="#555" strokeWidth="0.5" opacity="0.6" />
+      <line x1="27" y1="82" x2="37" y2="82" stroke="#555" strokeWidth="0.5" opacity="0.6" />
+      <line x1="27" y1="88" x2="37" y2="88" stroke="#555" strokeWidth="0.5" opacity="0.6" />
+      {/* Pommel */}
+      <circle cx="32" cy="96" r="3" fill="#2a2a3a" stroke="#666" strokeWidth="0.5" />
       <defs>
-        <linearGradient id="bladeGrad" x1="32" y1="4" x2="32" y2="110" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#e0e0e0" />
-          <stop offset="40%" stopColor="#b0b0b0" />
-          <stop offset="100%" stopColor="#707070" />
+        <linearGradient id="bladeGrad" x1="32" y1="2" x2="32" y2="112" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#f0f0f0" />
+          <stop offset="30%" stopColor="#d8d8d8" />
+          <stop offset="60%" stopColor="#b0b0b0" />
+          <stop offset="100%" stopColor="#808080" />
+        </linearGradient>
+        <linearGradient id="bladeHighlight" x1="32" y1="8" x2="36" y2="60" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#ffffff" />
+          <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
         </linearGradient>
       </defs>
     </svg>
@@ -74,7 +87,7 @@ export function SlashEffect({ data, onComplete }: SlashEffectProps) {
         )}
       </AnimatePresence>
 
-      {/* Knife — vertical, appears above avatar, spins 360°, stabs down */}
+      {/* Knife — vertical, appears above avatar, spins 360°, stabs down hard */}
       <AnimatePresence>
         {(phase === 'appear' || phase === 'spin' || phase === 'slash') && (
           <motion.div
@@ -82,26 +95,26 @@ export function SlashEffect({ data, onComplete }: SlashEffectProps) {
             className="absolute left-1/2 z-[110]"
             style={{
               marginLeft: '-20px',
-              filter: 'drop-shadow(0 0 20px rgba(255,0,64,0.8)) drop-shadow(0 0 40px rgba(255,0,64,0.4))',
+              filter: 'drop-shadow(0 0 15px rgba(255,255,255,0.3))',
             }}
-            initial={{ opacity: 0, scale: 0.4, top: '5%', rotate: 0 }}
+            initial={{ opacity: 0, scale: 0.3, top: '-5%', rotate: 0 }}
             animate={
               phase === 'appear'
-                ? { opacity: 1, scale: 1, top: '5%', rotate: 0 }
+                ? { opacity: 1, scale: 1, top: '-5%', rotate: 0 }
                 : phase === 'spin'
-                ? { opacity: 1, scale: 1, top: '5%', rotate: 360 }
-                : { opacity: 0, scale: 1.2, top: '20%', rotate: 360 }
+                ? { opacity: 1, scale: 1.1, top: '-5%', rotate: 360 }
+                : { opacity: 0, scale: 1.6, top: '22%', rotate: 360 }
             }
             exit={{ opacity: 0 }}
             transition={
               phase === 'spin'
-                ? { rotate: { duration: 0.7, ease: 'easeInOut' }, default: { duration: 0.3 } }
+                ? { rotate: { duration: 0.6, ease: 'easeInOut' }, scale: { duration: 0.6, ease: 'easeInOut' }, default: { duration: 0.25 } }
                 : phase === 'slash'
-                ? { duration: 0.35, ease: [0.45, 0, 0.55, 1] }
-                : { duration: 0.3 }
+                ? { duration: 0.22, ease: [0.55, 0, 1, 0.45] }
+                : { duration: 0.25 }
             }
           >
-            <KnifeIcon className="w-[40px] h-[72px]" />
+            <KnifeIcon className="w-[44px] h-[80px]" />
           </motion.div>
         )}
       </AnimatePresence>
