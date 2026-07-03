@@ -14,9 +14,9 @@ export function SlashEffect({ data, onComplete }: SlashEffectProps) {
     const timers: ReturnType<typeof setTimeout>[] = [];
     timers.push(setTimeout(() => setPhase('spin'), 300));
     timers.push(setTimeout(() => setPhase('slash'), 1000));
-    timers.push(setTimeout(() => setPhase('result'), 1300));
-    timers.push(setTimeout(() => setPhase('fade'), 2200));
-    timers.push(setTimeout(() => onComplete(), 2500));
+    timers.push(setTimeout(() => setPhase('result'), 1350));
+    timers.push(setTimeout(() => setPhase('fade'), 2300));
+    timers.push(setTimeout(() => onComplete(), 2600));
     return () => timers.forEach(clearTimeout);
   }, [onComplete]);
 
@@ -35,34 +35,37 @@ export function SlashEffect({ data, onComplete }: SlashEffectProps) {
             key="red-flash"
             className="absolute inset-0 bg-red-600"
             initial={{ opacity: 0 }}
-            animate={{ opacity: [0, 0.25, 0.1] }}
+            animate={{ opacity: [0, 0.3, 0.1] }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.5 }}
           />
         )}
       </AnimatePresence>
 
-      {/* Knife icon — appears, spins, then slashes */}
+      {/* Knife — appears above avatar, spins, then slashes DOWN into avatar */}
       <AnimatePresence>
         {(phase === 'appear' || phase === 'spin' || phase === 'slash') && (
           <motion.div
             key="knife"
-            className="absolute left-1/2 top-1/2 text-[80px] select-none"
-            style={{ filter: 'drop-shadow(0 0 20px rgba(255,0,64,0.8))' }}
-            initial={{ opacity: 0, scale: 0.3, x: '-50%', y: '-50%' }}
+            className="absolute left-1/2 text-[80px] select-none z-[110]"
+            style={{
+              filter: 'drop-shadow(0 0 25px rgba(255,0,64,0.9))',
+              marginLeft: '-40px',
+            }}
+            initial={{ opacity: 0, scale: 0.3, top: '15%', rotate: 0 }}
             animate={
               phase === 'appear'
-                ? { opacity: 1, scale: 1, rotate: 0, x: '-50%', y: '-50%' }
+                ? { opacity: 1, scale: 1, top: '15%', rotate: 0 }
                 : phase === 'spin'
-                ? { opacity: 1, scale: 1, rotate: 360, x: '-50%', y: '-50%' }
-                : { opacity: 0, scale: 1.8, rotate: 360, x: '-50%', y: '30%' }
+                ? { opacity: 1, scale: 1, top: '15%', rotate: 360 }
+                : { opacity: 0, scale: 1.5, top: '22%', rotate: 360 }
             }
             exit={{ opacity: 0 }}
             transition={
               phase === 'spin'
                 ? { rotate: { duration: 0.7, ease: 'easeInOut' }, default: { duration: 0.3 } }
                 : phase === 'slash'
-                ? { duration: 0.3, ease: 'easeIn' }
+                ? { duration: 0.35, ease: [0.36, 0, 0.66, -0.56] }
                 : { duration: 0.3 }
             }
           >
@@ -76,16 +79,18 @@ export function SlashEffect({ data, onComplete }: SlashEffectProps) {
         {phase === 'result' && targets.map((target) => (
           <motion.div
             key={`result-${target.id}`}
-            className="absolute inset-0 flex items-center justify-center"
+            className="absolute inset-0 pointer-events-none z-[105]"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
           >
-            {/* Target name badge */}
+            {/* Target name badge — at avatar position (top ~18%) */}
             <motion.div
-              className="absolute top-[38%] px-4 py-1.5 rounded-lg border"
+              className="absolute left-1/2 px-4 py-1.5 rounded-lg border"
               style={{
+                top: '18%',
+                marginLeft: '-60px',
                 backgroundColor: target.hasDied ? 'rgba(255,0,64,0.15)' : 'rgba(0,0,0,0.7)',
                 borderColor: target.hasDied ? '#ff0040' : 'rgba(255,255,255,0.1)',
                 boxShadow: target.hasDied ? '0 0 20px rgba(255,0,64,0.4)' : 'none',
@@ -103,14 +108,15 @@ export function SlashEffect({ data, onComplete }: SlashEffectProps) {
             </motion.div>
 
             {target.hasDied ? (
-              /* DEAD: 2 slash marks */
+              /* DEAD: 2 slash marks + X at avatar area */
               <>
-                {/* Slash 1 — diagonal top-left to bottom-right */}
+                {/* Slash 1 — top-left to bottom-right */}
                 <motion.div
-                  className="absolute w-[200px] h-[4px] left-1/2 top-1/2"
+                  className="absolute h-[4px]"
                   style={{
-                    marginLeft: '-100px',
-                    marginTop: '-2px',
+                    width: '220px',
+                    left: 'calc(50% - 110px)',
+                    top: 'calc(18% - 2px)',
                     background: 'linear-gradient(90deg, transparent 0%, #ff0040 15%, #ff0040 85%, transparent 100%)',
                     boxShadow: '0 0 15px #ff0040, 0 0 30px #ff0040',
                     transformOrigin: 'center center',
@@ -120,12 +126,13 @@ export function SlashEffect({ data, onComplete }: SlashEffectProps) {
                   animate={{ scaleX: 1, opacity: [0, 1, 1, 0.7] }}
                   transition={{ duration: 0.25, delay: 0.05, ease: 'easeOut' }}
                 />
-                {/* Slash 2 — diagonal top-right to bottom-left */}
+                {/* Slash 2 — top-right to bottom-left */}
                 <motion.div
-                  className="absolute w-[200px] h-[4px] left-1/2 top-1/2"
+                  className="absolute h-[4px]"
                   style={{
-                    marginLeft: '-100px',
-                    marginTop: '-2px',
+                    width: '220px',
+                    left: 'calc(50% - 110px)',
+                    top: 'calc(18% - 2px)',
                     background: 'linear-gradient(90deg, transparent 0%, #ff0040 15%, #ff0040 85%, transparent 100%)',
                     boxShadow: '0 0 15px #ff0040, 0 0 30px #ff0040',
                     transformOrigin: 'center center',
@@ -135,36 +142,42 @@ export function SlashEffect({ data, onComplete }: SlashEffectProps) {
                   animate={{ scaleX: 1, opacity: [0, 1, 1, 0.7] }}
                   transition={{ duration: 0.25, delay: 0.2, ease: 'easeOut' }}
                 />
-                {/* X mark in center */}
+                {/* X mark at avatar */}
                 <motion.div
-                  className="absolute text-[40px] font-black"
+                  className="absolute left-1/2 text-[44px] font-black"
                   style={{
+                    top: 'calc(18% - 22px)',
+                    marginLeft: '-22px',
                     color: '#ff0040',
                     textShadow: '0 0 15px #ff0040, 0 0 30px #ff0040',
                   }}
-                  initial={{ opacity: 0, scale: 2 }}
-                  animate={{ opacity: [0, 1, 0.8], scale: [2, 1, 1] }}
+                  initial={{ opacity: 0, scale: 2.5 }}
+                  animate={{ opacity: [0, 1, 0.9], scale: [2.5, 1, 1] }}
                   transition={{ duration: 0.3, delay: 0.35 }}
                 >
                   ✕
                 </motion.div>
               </>
             ) : (
-              /* ALIVE: small shake + red flash on name */
+              /* ALIVE: small screen shake + SURVIVED badge */
               <motion.div
-                className="absolute inset-0 flex items-center justify-center"
-                animate={{
-                  x: [0, -4, 6, -3, 4, -2, 0],
-                }}
+                className="absolute inset-0"
+                animate={{ x: [0, -5, 7, -4, 5, -2, 0] }}
                 transition={{ duration: 0.3, delay: 0.1 }}
               >
                 <motion.div
-                  className="px-3 py-1 rounded border border-emerald-theme/50 bg-emerald-theme/10"
+                  className="absolute left-1/2 px-3 py-1 rounded border"
+                  style={{
+                    top: 'calc(18% + 20px)',
+                    marginLeft: '-40px',
+                    borderColor: 'rgba(34,197,94,0.5)',
+                    backgroundColor: 'rgba(34,197,94,0.1)',
+                  }}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: [0, 1, 1, 0.6] }}
                   transition={{ duration: 0.8, delay: 0.15 }}
                 >
-                  <span className="text-emerald-theme text-xs font-black tracking-widest uppercase">
+                  <span className="text-emerald-theme text-[10px] font-black tracking-widest uppercase">
                     SURVIVED
                   </span>
                 </motion.div>
