@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Revolver } from './Revolver';
-import { Check, X, ShieldWarning, ArrowLeft } from '@phosphor-icons/react';
+import { Check, X, ArrowLeft } from '@phosphor-icons/react';
 import { GamePhase, Player, Card, TriggerResult, TableType, CallResult, DevilReveal, GunState } from '../types';
 import { Sounds } from '../audio/Sounds';
 
@@ -115,6 +115,8 @@ export function GameBoard({
   const prevHandCardsLength = useRef<number>(0);
   const lastProcessedTriggerRef = useRef<string | null>(null);
   const lastMouseMoveRef = useRef<number>(0);
+  const spinTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const resetFireTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const prevPhase = useRef<GamePhase>(phase);
 
@@ -172,6 +174,9 @@ export function GameBoard({
       if (lastProcessedTriggerRef.current === triggerKey) return;
       lastProcessedTriggerRef.current = triggerKey;
 
+      if (spinTimerRef.current) clearTimeout(spinTimerRef.current);
+      if (resetFireTimerRef.current) clearTimeout(resetFireTimerRef.current);
+
       setIsGunInCenter(true);
       setIsSpinning(true);
       Sounds.gunClick();
@@ -192,7 +197,7 @@ export function GameBoard({
       }
       setRotationAngle(targetAngle);
 
-      const spinTimer = setTimeout(() => {
+      spinTimerRef.current = setTimeout(() => {
         setIsSpinning(false);
         setIsFiring(true);
 
@@ -204,20 +209,21 @@ export function GameBoard({
           showHUDAlert('BANG // PROTOCOL FAULT', 'text-red-theme', 3000);
         }
 
-        const resetFireTimer = setTimeout(() => {
+        resetFireTimerRef.current = setTimeout(() => {
           setIsFiring(false);
           setRotationAngle(-90);
           setIsGunInCenter(false);
         }, 2000);
-
-        return () => clearTimeout(resetFireTimer);
       }, 1200);
-
-      return () => clearTimeout(spinTimer);
     } else {
       lastProcessedTriggerRef.current = null;
     }
-  }, [triggerResult, localId, players]);
+
+    return () => {
+      if (spinTimerRef.current) clearTimeout(spinTimerRef.current);
+      if (resetFireTimerRef.current) clearTimeout(resetFireTimerRef.current);
+    };
+  }, [triggerResult, localId]);
 
   useEffect(() => {
     if (currentTurnId === localId && phase === 'playing' && localPlayer.isAlive) {
@@ -564,9 +570,9 @@ export function GameBoard({
               const cardStyle = getCardTypeStyle(card.type);
 
               const neighborOffset = hoveredCardIndex !== null
-                ? (index < hoveredCardIndex ? -28 : index > hoveredCardIndex ? 28 : 0)
+                ? (index < hoveredCardIndex ? -32 : index > hoveredCardIndex ? 32 : 0)
                 : 0;
-              const baseX = dist * 58 + neighborOffset;
+              const baseX = dist * 72 + neighborOffset;
               const baseY = Math.pow(Math.abs(dist), 1.5) * 3;
               const baseAngle = dist * 2;
 
@@ -602,7 +608,7 @@ export function GameBoard({
                     transformStyle: 'preserve-3d',
                     borderColor: (isHovered || isSelected) ? cardStyle.color : `${cardStyle.color}60`,
                     boxShadow: isSelected ? `0 0 15px ${cardStyle.color}60` : 'none',
-                    margin: '0 2px',
+                    margin: '0 4px',
                   }}
                 >
                   <span className="absolute top-1 left-1.5 text-[8px] font-mono text-cyan-theme-muted select-none font-normal">+</span>
@@ -762,14 +768,14 @@ export function GameBoard({
       <AnimatePresence>
         {(hudMessage || botHudMessage) && (
           <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -15 }}
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            transition={{ type: "spring", stiffness: 300, damping: 20 }}
             className="fixed inset-0 flex items-center justify-center pointer-events-none z-40"
           >
-            <div className="bg-panel-solid/95 border border-border-theme px-8 py-5 rounded-xl shadow-2xl flex items-center gap-3">
-              <ShieldWarning size={20} className="text-red-theme animate-pulse" />
-              <span className={`text-md font-extrabold tracking-widest uppercase ${hudMessage?.color || botHudMessage?.color || 'text-text-theme'}`}>
+            <div className="bg-panel-solid/95 border-2 border-cyan-theme px-12 py-6 shadow-2xl shadow-cyan-theme/20 flex items-center gap-4">
+              <span className={`text-2xl font-black tracking-[0.3em] uppercase font-mono ${hudMessage?.color || botHudMessage?.color || 'text-text-theme'}`}>
                 {hudMessage?.text || botHudMessage?.text}
               </span>
             </div>
