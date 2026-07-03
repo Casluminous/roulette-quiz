@@ -670,10 +670,12 @@ export function GameBoard({
                     transformOrigin: 'center 110%',
                     zIndex: hoverZ,
                     transformStyle: 'preserve-3d',
-                    borderColor: (card.type === tableType || card.type === 'joker' || card.type === 'devil')
+                    borderColor: (card.type === 'joker' || card.type === 'devil')
                       ? (isHovered || isSelected ? cardStyle.color : `${cardStyle.color}60`)
-                      : (isHovered || isSelected ? 'var(--border-theme)' : 'var(--border-theme)60'),
-                    boxShadow: isSelected && (card.type === tableType || card.type === 'joker' || card.type === 'devil')
+                      : (card.type === tableType)
+                        ? (isHovered || isSelected ? cardStyle.color : `${cardStyle.color}60`)
+                        : (isHovered || isSelected ? 'var(--border-theme)' : 'var(--border-theme)60'),
+                    boxShadow: isSelected && (card.type === 'joker' || card.type === 'devil' || card.type === tableType)
                       ? `0 0 15px ${cardStyle.color}60` : 'none',
                     margin: '0 4px',
                   }}
@@ -908,7 +910,9 @@ export function GameBoard({
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.98, y: 15, opacity: 0 }}
               transition={{ type: "spring", stiffness: 350, damping: 30 }}
-              className="bg-surface-3 border-2 border-cyan-theme-light rounded-none p-10 max-w-4xl w-full flex flex-col relative overflow-hidden"
+              className={`bg-surface-3 border-2 rounded-none p-10 max-w-4xl w-full flex flex-col relative overflow-hidden ${
+                callResult.hasDevilCard ? 'border-red-theme' : 'border-cyan-theme-light'
+              }`}
             >
               <span className="absolute top-2 left-2 text-[10px] font-mono text-cyan-theme-muted select-none font-normal">+</span>
               <span className="absolute top-2 right-2 text-[10px] font-mono text-cyan-theme-muted select-none font-normal">+</span>
@@ -916,8 +920,10 @@ export function GameBoard({
               <span className="absolute bottom-2 right-2 text-[10px] font-mono text-cyan-theme-muted select-none font-normal">+</span>
 
               <div className="text-center mb-6">
-                <h2 className={`text-3xl font-black tracking-widest uppercase font-mono ${callResult.wasLying ? 'text-red-theme' : 'text-emerald-theme'}`}>
-                  {callResult.wasLying ? 'LIAR!' : 'TRUTH!'}
+                <h2 className={`text-3xl font-black tracking-widest uppercase font-mono ${
+                  callResult.hasDevilCard ? 'text-red-theme' : callResult.wasLying ? 'text-red-theme' : 'text-emerald-theme'
+                }`}>
+                  {callResult.hasDevilCard ? 'TRAP!' : callResult.wasLying ? 'LIAR!' : 'TRUTH!'}
                 </h2>
                 <p className="text-sm text-text-theme-secondary mt-2 font-mono">
                   {callResult.caller} called {callResult.previousPlayer}
