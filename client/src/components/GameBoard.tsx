@@ -670,13 +670,8 @@ export function GameBoard({
                     transformOrigin: 'center 110%',
                     zIndex: hoverZ,
                     transformStyle: 'preserve-3d',
-                    borderColor: (card.type === 'joker' || card.type === 'devil')
-                      ? (isHovered || isSelected ? cardStyle.color : `${cardStyle.color}60`)
-                      : (card.type === tableType)
-                        ? (isHovered || isSelected ? cardStyle.color : `${cardStyle.color}60`)
-                        : (isHovered || isSelected ? 'var(--border-theme)' : 'var(--border-theme)60'),
-                    boxShadow: isSelected && (card.type === 'joker' || card.type === 'devil' || card.type === tableType)
-                      ? `0 0 15px ${cardStyle.color}60` : 'none',
+                    borderColor: (isHovered || isSelected) ? 'var(--border-theme)' : 'var(--border-theme)60',
+                    boxShadow: isSelected ? '0 0 15px rgba(16, 185, 129, 0.3)' : 'none',
                     margin: '0 4px',
                   }}
                 >
@@ -736,6 +731,7 @@ export function GameBoard({
           const style = getCardTypeStyle(card.type);
           const info = CARD_INFO[card.type as CardInfoKey];
           if (!info) return null;
+          const isMatchTable = card.type === tableType || card.type === 'joker' || card.type === 'devil';
           return (
             <motion.div
               key={card.id}
@@ -745,7 +741,10 @@ export function GameBoard({
               transition={{ duration: 0.2 }}
               className="absolute left-6 top-[38%] -translate-y-1/2 z-40 w-56 pointer-events-none"
             >
-              <div className="bg-panel-solid/95 border border-emerald-theme p-4 backdrop-blur-md" style={{ boxShadow: '0 0 20px rgba(16, 185, 129, 0.3), inset 0 0 20px rgba(16, 185, 129, 0.05)' }}>
+              <div
+                className={`bg-panel-solid/95 border p-4 backdrop-blur-md ${isMatchTable ? 'border-emerald-theme' : 'border-border-theme'}`}
+                style={isMatchTable ? { boxShadow: '0 0 20px rgba(16, 185, 129, 0.3), inset 0 0 20px rgba(16, 185, 129, 0.05)' } : {}}
+              >
                 <div className="flex items-center gap-2 mb-3 border-b border-border-theme pb-2">
                   <span className="text-2xl" style={{ color: style.color }}>{style.icon}</span>
                   <div>
