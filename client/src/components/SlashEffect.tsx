@@ -10,44 +10,26 @@ interface SlashEffectProps {
 function KnifeIcon({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 64 120" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
-      {/* Blade — clean silver */}
+      {/* Blade — white outline only */}
       <path
         d="M32 2 L44 58 L39 64 L32 112 L25 64 L20 58 Z"
-        fill="url(#bladeGrad)"
-        stroke="#c0c0c0"
-        strokeWidth="1"
+        stroke="white"
+        strokeWidth="2"
+        strokeLinejoin="round"
       />
       {/* Blade highlight */}
-      <path
-        d="M32 8 L38 58 L32 60 Z"
-        fill="url(#bladeHighlight)"
-        opacity="0.4"
-      />
-      {/* Blade center ridge */}
-      <line x1="32" y1="6" x2="32" y2="108" stroke="#d0d0d0" strokeWidth="0.8" opacity="0.7" />
-      {/* Guard — dark metallic */}
-      <rect x="14" y="56" width="36" height="7" rx="2" fill="#2a2a3a" stroke="#888" strokeWidth="0.8" />
+      <line x1="32" y1="6" x2="32" y2="108" stroke="white" strokeWidth="0.8" opacity="0.4" />
+      {/* Guard */}
+      <rect x="14" y="56" width="36" height="7" rx="2" stroke="white" strokeWidth="1.5" />
       {/* Handle */}
-      <rect x="25" y="63" width="14" height="30" rx="3" fill="#1a1a28" stroke="#666" strokeWidth="0.6" />
+      <rect x="25" y="63" width="14" height="30" rx="3" stroke="white" strokeWidth="1.2" />
       {/* Handle grip */}
-      <line x1="27" y1="70" x2="37" y2="70" stroke="#555" strokeWidth="0.5" opacity="0.6" />
-      <line x1="27" y1="76" x2="37" y2="76" stroke="#555" strokeWidth="0.5" opacity="0.6" />
-      <line x1="27" y1="82" x2="37" y2="82" stroke="#555" strokeWidth="0.5" opacity="0.6" />
-      <line x1="27" y1="88" x2="37" y2="88" stroke="#555" strokeWidth="0.5" opacity="0.6" />
+      <line x1="27" y1="70" x2="37" y2="70" stroke="white" strokeWidth="0.6" opacity="0.5" />
+      <line x1="27" y1="76" x2="37" y2="76" stroke="white" strokeWidth="0.6" opacity="0.5" />
+      <line x1="27" y1="82" x2="37" y2="82" stroke="white" strokeWidth="0.6" opacity="0.5" />
+      <line x1="27" y1="88" x2="37" y2="88" stroke="white" strokeWidth="0.6" opacity="0.5" />
       {/* Pommel */}
-      <circle cx="32" cy="96" r="3" fill="#2a2a3a" stroke="#666" strokeWidth="0.5" />
-      <defs>
-        <linearGradient id="bladeGrad" x1="32" y1="2" x2="32" y2="112" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#f0f0f0" />
-          <stop offset="30%" stopColor="#d8d8d8" />
-          <stop offset="60%" stopColor="#b0b0b0" />
-          <stop offset="100%" stopColor="#808080" />
-        </linearGradient>
-        <linearGradient id="bladeHighlight" x1="32" y1="8" x2="36" y2="60" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#ffffff" />
-          <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
-        </linearGradient>
-      </defs>
+      <circle cx="32" cy="96" r="3" stroke="white" strokeWidth="1" />
     </svg>
   );
 }
