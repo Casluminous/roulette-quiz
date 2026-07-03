@@ -740,7 +740,7 @@ export function GameBoard({
               transition={{ duration: 0.2 }}
               className="absolute left-6 top-[38%] -translate-y-1/2 z-40 w-56 pointer-events-none"
             >
-              <div className="bg-panel-solid/95 border border-border-theme p-4 backdrop-blur-md">
+              <div className="bg-panel-solid/95 border border-emerald-theme p-4 backdrop-blur-md" style={{ boxShadow: '0 0 20px rgba(16, 185, 129, 0.3), inset 0 0 20px rgba(16, 185, 129, 0.05)' }}>
                 <div className="flex items-center gap-2 mb-3 border-b border-border-theme pb-2">
                   <span className="text-2xl" style={{ color: style.color }}>{style.icon}</span>
                   <div>
