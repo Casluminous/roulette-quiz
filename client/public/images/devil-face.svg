@@ -1,0 +1,37 @@
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Left horn -->
+  <path d="M60 75 Q55 30, 75 15 Q85 10, 90 25 Q95 45, 85 75" fill="#d0d0d0" stroke="#555" stroke-width="2"/>
+  <!-- Right horn -->
+  <path d="M140 75 Q145 30, 125 15 Q115 10, 110 25 Q105 45, 115 75" fill="#d0d0d0" stroke="#555" stroke-width="2"/>
+  <!-- Head shape -->
+  <path d="M55 80 Q50 60, 70 50 Q85 42, 100 40 Q115 42, 130 50 Q150 60, 145 80 Q150 100, 145 120 Q140 145, 120 160 Q110 168, 100 170 Q90 168, 80 160 Q60 145, 55 120 Q50 100, 55 80Z" fill="#808080" stroke="#444" stroke-width="2"/>
+  <!-- Left ear -->
+  <path d="M55 85 Q40 80, 35 95 Q32 110, 45 115 Q52 112, 55 105" fill="#808080" stroke="#444" stroke-width="1.5"/>
+  <!-- Right ear -->
+  <path d="M145 85 Q160 80, 165 95 Q168 110, 155 115 Q148 112, 145 105" fill="#808080" stroke="#444" stroke-width="1.5"/>
+  <!-- Left eyebrow -->
+  <path d="M65 72 Q75 62, 95 68 L90 78 Q75 72, 65 72Z" fill="#e8e8e8" stroke="#555" stroke-width="1"/>
+  <!-- Right eyebrow -->
+  <path d="M135 72 Q125 62, 105 68 L110 78 Q125 72, 135 72Z" fill="#e8e8e8" stroke="#555" stroke-width="1"/>
+  <!-- Left eye -->
+  <ellipse cx="80" cy="92" rx="12" ry="8" fill="#1a1a1a"/>
+  <ellipse cx="80" cy="91" rx="5" ry="4" fill="#fff"/>
+  <!-- Right eye -->
+  <ellipse cx="120" cy="92" rx="12" ry="8" fill="#1a1a1a"/>
+  <ellipse cx="120" cy="91" rx="5" ry="4" fill="#fff"/>
+  <!-- Nose -->
+  <path d="M95 100 Q100 108, 105 100" fill="none" stroke="#555" stroke-width="1.5"/>
+  <!-- Left mustache -->
+  <path d="M70 115 Q60 108, 45 112 Q35 115, 40 120 Q50 118, 65 118 Q68 117, 70 115Z" fill="#e0e0e0" stroke="#888" stroke-width="1"/>
+  <!-- Right mustache -->
+  <path d="M130 115 Q140 108, 155 112 Q165 115, 160 120 Q150 118, 135 118 Q132 117, 130 115Z" fill="#e0e0e0" stroke="#888" stroke-width="1"/>
+  <!-- Mouth -->
+  <path d="M70 130 Q85 145, 100 148 Q115 145, 130 130" fill="#2a2a2a" stroke="#444" stroke-width="1.5"/>
+  <!-- Teeth top row -->
+  <path d="M78 130 L82 140 L86 130" fill="#e8e8e8" stroke="#888" stroke-width="0.5"/>
+  <path d="M88 130 L92 142 L96 130" fill="#e8e8e8" stroke="#888" stroke-width="0.5"/>
+  <path d="M100 130 L104 142 L108 130" fill="#e8e8e8" stroke="#888" stroke-width="0.5"/>
+  <path d="M110 130 L114 140 L118 130" fill="#e8e8e8" stroke="#888" stroke-width="0.5"/>
+  <!-- Chin detail -->
+  <path d="M80 158 Q100 172, 120 158" fill="none" stroke="#555" stroke-width="1" opacity="0.5"/>
+</svg>
