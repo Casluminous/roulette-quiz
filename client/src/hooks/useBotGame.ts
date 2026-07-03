@@ -241,17 +241,7 @@ export function useBotGame(playerName: string, callbacks: BotGameCallbacks) {
       currentPosition: (prev.currentPosition + 1) % 6,
     }));
 
-    Sounds.gunClick();
-
     setTimeout(() => {
-      if (alive) {
-        Sounds.gunSurvive();
-        showHUDAlert(`${targetName} // COCK SURVIVED`, 'text-amber-400', 2000);
-      } else {
-        Sounds.gunFire();
-        showHUDAlert(`${targetName} // TERMINATED`, 'text-red-500', 3000);
-      }
-
       cb.setPlayers(prev => prev.map(p => {
         if (p.id === targetId) {
           return {
