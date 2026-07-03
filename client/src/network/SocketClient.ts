@@ -101,6 +101,9 @@ class SocketClient {
     this.socket.on('game:roundEnd', (data: any) => this.emit('game:roundEnd', data));
 
     this.socket.on('error', (data: any) => this.emit('error', data));
+
+    this.socket.on('chat:message', (data: any) => this.emit('chat:message', data));
+    this.socket.on('chat:history', (data: any) => this.emit('chat:history', data));
   }
 
   on(event: string, callback: EventCallback): void {
@@ -167,6 +170,10 @@ class SocketClient {
 
   leaveAfterDeath(roomId: string): void {
     this.send('game:leaveAfterDeath', { roomId });
+  }
+
+  sendChat(roomId: string, message: string): void {
+    this.send('chat:message', { roomId, message });
   }
 
   disconnect(): void {

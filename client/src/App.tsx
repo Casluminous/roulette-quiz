@@ -7,6 +7,7 @@ import { GameOver } from './components/GameOver';
 import { Screen, ConnectionStatus, GamePhase, Player, Card, TriggerResult, WinnerInfo, TableType, CallResult, DevilReveal, GunState } from './types';
 import { Sounds } from './audio/Sounds';
 import { useBotGame } from './hooks/useBotGame';
+import { ChatBox } from './components/ChatBox';
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>('menu');
@@ -430,6 +431,10 @@ export default function App() {
           winnerInfo={winnerInfo}
           disconnect={handleDisconnect}
         />
+      )}
+
+      {screen !== 'menu' && !botMode && (
+        <ChatBox roomId={roomId} localPlayerId={localPlayerId} />
       )}
     </main>
   );

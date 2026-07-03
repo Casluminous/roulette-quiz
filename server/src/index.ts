@@ -70,7 +70,9 @@ app.get('/lan-servers', (_req, res) => {
 });
 
 app.get('/api/rooms', (_req, res) => {
-  res.json({ rooms: roomManager.getWaitingRooms() });
+  const waiting = roomManager.getWaitingRooms();
+  const playing = roomManager.getPlayingRooms();
+  res.json({ rooms: waiting, playing });
 });
 
 if (isProduction) {
@@ -121,6 +123,10 @@ io.on('connection', (socket) => {
       socket.emit('room:joined', { roomId, playerId: socket.id });
       const room = roomManager.getRoom(roomId);
       io.to(roomId).emit('room:players', { players: result.players });
+      const history = roomManager.getChatHistory(roomId);
+      if (history.length > 0) {
+        socket.emit('chat:history', { messages: history });
+      }
     } else {
       socket.emit('error', { message: result.error });
     }
@@ -171,6 +177,26 @@ io.on('connection', (socket) => {
     gameManager.handleLeaveAfterDeath(roomId, socket.id);
     socket.leave(roomId);
     socket.emit('room:left');
+  });
+
+  socket.on('chat:message', (data: { roomId: string; message: string }) => {
+    const { roomId, message } = data;
+    if (!message || !message.trim()) return;
+    const room = roomManager.getRoom(roomId);
+    if (!room) return;
+    const player = room.players.find(p => p.id === socket.id);
+    if (!player) return;
+
+    const sanitized = message.trim().substring(0, 200);
+    const chatMsg = {
+      playerId: socket.id,
+      playerName: player.name,
+      message: sanitized,
+      timestamp: Date.now(),
+    };
+
+    roomManager.addChatMessage(roomId, chatMsg);
+    io.to(roomId).emit('chat:message', chatMsg);
   });
 
   socket.on('disconnect', () => {

@@ -1,9 +1,11 @@
 import { v4 as uuidv4 } from 'uuid';
-import { Room, Player } from './types';
+import { Room, Player, ChatMessage } from './types';
 
 export class RoomManager {
   private rooms: Map<string, Room> = new Map();
   private playerRooms: Map<string, string> = new Map();
+  private chatHistory: Map<string, ChatMessage[]> = new Map();
+  private static readonly MAX_CHAT_HISTORY = 50;
 
   private validatePlayerName(name: string): string {
     let sanitized = (name || '').trim();
@@ -173,5 +175,40 @@ export class RoomManager {
       }
     }
     return result;
+  }
+
+  getPlayingRooms(): { id: string; playerCount: number; maxPlayers: number; tableType: string; round: number }[] {
+    const result: { id: string; playerCount: number; maxPlayers: number; tableType: string; round: number }[] = [];
+    for (const [id, room] of this.rooms.entries()) {
+      if (room.state === 'playing') {
+        result.push({
+          id,
+          playerCount: room.players.filter(p => p.isAlive).length,
+          maxPlayers: 4,
+          tableType: room.tableType || 'king',
+          round: room.round || 1,
+        });
+      }
+    }
+    return result;
+  }
+
+  addChatMessage(roomId: string, message: ChatMessage): void {
+    if (!this.chatHistory.has(roomId)) {
+      this.chatHistory.set(roomId, []);
+    }
+    const history = this.chatHistory.get(roomId)!;
+    history.push(message);
+    if (history.length > RoomManager.MAX_CHAT_HISTORY) {
+      history.splice(0, history.length - RoomManager.MAX_CHAT_HISTORY);
+    }
+  }
+
+  getChatHistory(roomId: string): ChatMessage[] {
+    return this.chatHistory.get(roomId) || [];
+  }
+
+  cleanupChatHistory(roomId: string): void {
+    this.chatHistory.delete(roomId);
   }
 }

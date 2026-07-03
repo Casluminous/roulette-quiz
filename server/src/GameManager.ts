@@ -88,6 +88,12 @@ export class GameManager {
     game.tableType = tableType;
     game.tablePile = [];
 
+    const room = this.roomManager.getRoom(roomId);
+    if (room) {
+      room.tableType = tableType;
+      room.round = game.round;
+    }
+
     alivePlayers.forEach(player => {
       const { cards, remaining } = this.deckManager.dealCards(game.deck, 5);
       player.hand = cards;
@@ -465,6 +471,13 @@ export class GameManager {
         winnerId: alivePlayers[0]?.id || '',
       });
       this.games.delete(roomId);
+      const room = this.roomManager.getRoom(roomId);
+      if (room) {
+        room.state = 'waiting';
+        room.tableType = undefined;
+        room.round = undefined;
+      }
+      this.roomManager.cleanupChatHistory(roomId);
       return;
     }
 

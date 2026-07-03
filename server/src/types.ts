@@ -23,6 +23,15 @@ export interface Room {
   players: Player[];
   state: 'waiting' | 'playing';
   createdAt: number;
+  tableType?: TableType;
+  round?: number;
+}
+
+export interface ChatMessage {
+  playerId: string;
+  playerName: string;
+  message: string;
+  timestamp: number;
 }
 
 export interface Gun {

@@ -12,6 +12,14 @@ interface RoomInfo {
   createdAt: number;
 }
 
+interface PlayingRoomInfo {
+  id: string;
+  playerCount: number;
+  maxPlayers: number;
+  tableType: string;
+  round: number;
+}
+
 interface LobbyProps {
   roomId: string;
   players: Player[];
@@ -26,6 +34,7 @@ export function Lobby({ roomId, players, localId, error, disconnect }: LobbyProp
   const [shakeModal, setShakeModal] = useState<boolean>(false);
   const [isReady, setIsReady] = useState<boolean>(false);
   const [availableRooms, setAvailableRooms] = useState<RoomInfo[]>([]);
+  const [playingRooms, setPlayingRooms] = useState<PlayingRoomInfo[]>([]);
   const [loadingRooms, setLoadingRooms] = useState<boolean>(false);
 
   const fetchRooms = useCallback(async () => {
@@ -41,6 +50,7 @@ export function Lobby({ roomId, players, localId, error, disconnect }: LobbyProp
       const res = await fetch(`${baseUrl}/api/rooms`);
       const data = await res.json();
       setAvailableRooms(data.rooms || []);
+      setPlayingRooms(data.playing || []);
     } catch {
       setAvailableRooms([]);
     } finally {
@@ -210,6 +220,32 @@ export function Lobby({ roomId, players, localId, error, disconnect }: LobbyProp
             <span className="text-[10px] text-text-theme-muted font-extrabold tracking-widest uppercase">OPEN_PROTOCOLS //</span>
             <div className="text-text-theme-muted text-xs italic py-4 px-5 border border-dashed border-border-theme rounded-xl bg-input-theme flex items-center gap-3">
               <span className="w-1.5 h-1.5 rounded-full bg-text-theme-dim animate-pulse" /> No active protocols found...
+            </div>
+          </div>
+        )}
+
+        {!roomId && playingRooms.length > 0 && (
+          <div className="flex flex-col space-y-2 max-w-sm w-full mt-2">
+            <span className="text-[10px] text-amber-theme font-extrabold tracking-widest uppercase">ACTIVE_PROTOCOLS //</span>
+            <div className="flex flex-col space-y-2 max-h-40 overflow-y-auto pr-1 scrollbar-thin">
+              {playingRooms.map((room) => (
+                <div
+                  key={room.id}
+                  className="w-full py-3 bg-panel-solid/40 border border-amber-theme/30 rounded-xl text-xs font-extrabold tracking-wider uppercase flex items-center justify-between px-5"
+                >
+                  <span className="flex items-center gap-3">
+                    <span className="text-amber-theme font-black tracking-[4px]">{room.id}</span>
+                    <span className="text-[8px] font-mono text-text-theme-dim">
+                      {room.tableType.toUpperCase()}'S TABLE // R{room.round.toString().padStart(2, '0')}
+                    </span>
+                  </span>
+                  <span className="flex items-center gap-2 text-amber-theme/70">
+                    <Users size={14} />
+                    {room.playerCount}/{room.maxPlayers}
+                    <span className="text-[8px] ml-1 px-1.5 py-0.5 bg-amber-theme/10 text-amber-theme rounded">LIVE</span>
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
         )}
