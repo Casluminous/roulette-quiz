@@ -119,6 +119,7 @@ export function GameBoard({
   const resetFireTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const prevPhase = useRef<GamePhase>(phase);
+  const prevTableType = useRef<TableType>(tableType);
 
   useEffect(() => {
     setIsSpinning(false);
@@ -233,6 +234,15 @@ export function GameBoard({
       showHUDAlert('// CALL OR ACCEPT', 'text-amber-theme', 1000);
     }
   }, [currentTurnId, phase]);
+
+  useEffect(() => {
+    if (prevTableType.current !== tableType && phase === 'playing') {
+      const label = getTableLabel();
+      showHUDAlert(`◆ ${label}`, 'text-cyan-theme', 1500);
+      Sounds.turnAlert();
+    }
+    prevTableType.current = tableType;
+  }, [tableType, phase]);
 
   const showHUDAlert = (text: string, textColor: string, duration: number) => {
     setHudMessage({ text, color: textColor });
