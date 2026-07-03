@@ -689,13 +689,9 @@ export function GameBoard({
                         </span>
                       </div>
                       <div className="flex-1 flex items-center justify-center py-2 overflow-y-auto pr-0.5">
-                        {card.type === 'devil' ? (
-                          <img src="/images/devil-face.svg" alt="DEVIL" className="w-20 h-20 object-contain" />
-                        ) : (
-                          <div className="text-6xl text-text-theme">
-                            {cardStyle.icon}
-                          </div>
-                        )}
+                        <div className="text-6xl text-text-theme">
+                          {cardStyle.icon}
+                        </div>
                       </div>
                       <div className="flex justify-between items-center w-full border-t border-border-theme pt-1.5 text-[9px] font-mono tracking-widest opacity-50">
                         <span className="uppercase">{card.type}</span>
@@ -948,13 +944,9 @@ export function GameBoard({
                         borderColor: `${cardStyle.color}cc`,
                       }}
                     >
-                      {card.type === 'devil' ? (
-                        <img src="/images/devil-face.svg" alt="DEVIL" className="w-10 h-10 object-contain" />
-                      ) : (
-                        <div className="text-4xl" style={{ color: cardStyle.color }}>
-                          {cardStyle.icon}
-                        </div>
-                      )}
+                      <div className="text-4xl" style={{ color: cardStyle.color }}>
+                        {cardStyle.icon}
+                      </div>
                       <span className="text-[10px] font-bold font-mono mt-1" style={{ color: cardStyle.color }}>
                         {cardStyle.label}
                       </span>
