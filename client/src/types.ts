@@ -47,6 +47,14 @@ export interface GunState {
   bulletCount: number;
 }
 
+export interface SlashEffect {
+  players: { id: string; name: string; alive: boolean }[];
+  bulletCount: number;
+  isAccept: boolean;
+  excludedPlayerId?: string | null;
+  excludedPlayerName?: string | null;
+}
+
 export type GamePhase = 'waiting' | 'dealing' | 'playing' | 'calling' | 'revealing' | 'trigger' | 'game_over';
 export type Screen = 'menu' | 'lobby' | 'game' | 'gameover';
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected';

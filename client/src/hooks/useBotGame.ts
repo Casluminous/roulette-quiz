@@ -35,7 +35,7 @@ const DECK_CONFIG: Record<CardType, number> = {
   queen: 6,
   ace: 6,
   joker: 2,
-  devil: 2,
+  devil: 1,
 };
 
 function createRealDeck(): Card[] {
@@ -101,12 +101,14 @@ export function useBotGame(playerName: string, callbacks: BotGameCallbacks) {
   const [bots, setBots] = useState<BotState[]>([]);
   const [botHudMessage, setBotHudMessage] = useState<{ text: string; color: string } | null>(null);
   const [botGun, setBotGun] = useState(createBotGun);
+  const [botDevilGun, setBotDevilGun] = useState(createDevilGun);
   const [isSpectating, setIsSpectating] = useState(false);
   const [currentTableType, setCurrentTableType] = useState<TableType>('king');
 
   const botTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bulletsFiredCountRef = useRef<number>(0);
   const botGunRef = useRef(botGun);
+  const botDevilGunRef = useRef(botDevilGun);
   const gamePhaseRef = useRef<GamePhase>('waiting');
   const currentTurnRef = useRef('');
   const botsRef = useRef<BotState[]>(bots);
@@ -120,6 +122,7 @@ export function useBotGame(playerName: string, callbacks: BotGameCallbacks) {
   const botPlayTurnRef = useRef<(botId: string) => void>(() => {});
 
   useEffect(() => { botGunRef.current = botGun; }, [botGun]);
+  useEffect(() => { botDevilGunRef.current = botDevilGun; }, [botDevilGun]);
   useEffect(() => { botsRef.current = bots; }, [bots]);
   useEffect(() => { callbacksRef.current = callbacks; }, [callbacks]);
   useEffect(() => { tableTypeRef.current = currentTableType; }, [currentTableType]);
@@ -284,6 +287,62 @@ export function useBotGame(playerName: string, callbacks: BotGameCallbacks) {
     }, 1200);
   }, [playerName, showHUDAlert, clearAllTimers]);
 
+  const executeSlashForMultiple = useCallback((targetIds: string[], callback: () => void) => {
+    clearAllTimers();
+    const cb = callbacksRef.current;
+    const devilGun = botDevilGunRef.current;
+
+    const affectedPlayers: { id: string; name: string; alive: boolean }[] = [];
+
+    targetIds.forEach(targetId => {
+      const bullet = devilGun.chambers[devilGun.currentPosition];
+      devilGun.bulletsFired++;
+      devilGun.currentPosition = (devilGun.currentPosition + 1) % 4;
+
+      let targetName = playerName;
+      if (targetId !== 'local-player') {
+        targetName = botsRef.current.find(b => b.id === targetId)?.name || 'BOT';
+      }
+
+      const alive = !bullet;
+      affectedPlayers.push({ id: targetId, name: targetName, alive });
+
+      if (!alive && targetId !== 'local-player') {
+        botsRef.current = botsRef.current.map(b => b.id === targetId ? { ...b, isAlive: false, hand: [], cardsCount: 0 } : b);
+      }
+    });
+
+    cb.setPlayers(prev => prev.map(p => {
+      const update = affectedPlayers.find(u => u.id === p.id);
+      if (update) {
+        return { ...p, isAlive: update.alive, cardsCount: update.alive ? p.cardsCount : 0 };
+      }
+      return p;
+    }));
+
+    const firstDead = affectedPlayers.find(p => !p.alive);
+    if (firstDead) {
+      cb.setTriggerResult({
+        alive: false,
+        playerId: firstDead.id,
+        playerName: firstDead.name,
+        bulletCount: 4 - devilGun.bulletsFired,
+      });
+      cb.setPhase('trigger');
+    }
+
+    setTimeout(() => {
+      cb.setTriggerResult(null);
+      affectedPlayers.forEach(p => {
+        if (!p.alive && p.id === 'local-player') {
+          handCardsRef.current = [];
+          cb.setHandCards([]);
+        }
+      });
+      callback();
+    }, 3000);
+  }, [playerName, clearAllTimers]);
+
   const processCallResult = useCallback((callerId: string, previousPlayerId: string) => {
     const cb = callbacksRef.current;
     const playedCards = lastPlayedCardsRef.current;
@@ -306,7 +365,25 @@ export function useBotGame(playerName: string, callbacks: BotGameCallbacks) {
     if (hasDevilCard) {
       setTimeout(() => {
         cb.setCallResult(null);
-        executeTriggerForPlayer(callerId, () => {
+        const allAliveIds = botsRef.current
+          .filter(b => b.isAlive && b.id !== previousPlayerId)
+          .map(b => b.id);
+        const localAlive = playersRef.current.find(p => p.id === 'local-player')?.isAlive && previousPlayerId !== 'local-player';
+        const targetIds = localAlive ? ['local-player', ...allAliveIds] : allAliveIds;
+
+        if (targetIds.length === 0) {
+          if (checkBotGameOver()) return;
+          dealNewRound();
+          const nextTurn = getNextAliveWithCards(callerId);
+          cb.setCurrentTurnId(nextTurn);
+          cb.setPhase('playing');
+          if (nextTurn !== 'local-player') {
+            setTimeout(() => botPlayTurnRef.current(nextTurn), 1500);
+          }
+          return;
+        }
+
+        executeSlashForMultiple(targetIds, () => {
           if (checkBotGameOver()) return;
           dealNewRound();
           const nextTurn = getNextAliveWithCards(callerId);
@@ -468,13 +545,18 @@ export function useBotGame(playerName: string, callbacks: BotGameCallbacks) {
     if (hasDevilCard) {
       cb.setPhase('revealing');
       setTimeout(() => {
-        cb.setPhase('playing');
-        const currentTurn = currentTurnRef.current;
-        cb.setCurrentTurnId(currentTurn);
-        if (currentTurn !== 'local-player') {
-          setTimeout(() => botPlayTurn(currentTurn), 1500);
-        }
-      }, 3000);
+        cb.setCallResult(null);
+        executeSlashForMultiple(['local-player'], () => {
+          if (checkBotGameOver()) return;
+          dealNewRound();
+          const currentTurn = currentTurnRef.current;
+          cb.setCurrentTurnId(currentTurn);
+          cb.setPhase('playing');
+          if (currentTurn !== 'local-player') {
+            setTimeout(() => botPlayTurn(currentTurn), 1500);
+          }
+        });
+      }, 2000);
       return;
     }
 
@@ -512,6 +594,7 @@ export function useBotGame(playerName: string, callbacks: BotGameCallbacks) {
     callbacks.setRound(1);
     bulletsFiredCountRef.current = 0;
     setBotGun(createBotGun());
+    setBotDevilGun(createDevilGun());
     callbacks.setPhase('waiting');
 
     setTimeout(() => {
@@ -584,6 +667,7 @@ export function useBotGame(playerName: string, callbacks: BotGameCallbacks) {
     bots,
     botHudMessage,
     botGun,
+    botDevilGun,
     isSpectating,
     startBotGame,
     handleBotDisconnect,

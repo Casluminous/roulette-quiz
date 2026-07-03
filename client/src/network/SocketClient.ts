@@ -88,8 +88,7 @@ class SocketClient {
     this.socket.on('game:cardsPlayed', (data: any) => this.emit('game:cardsPlayed', data));
     this.socket.on('game:callResult', (data: any) => this.emit('game:callResult', data));
     this.socket.on('game:devilReveal', (data: any) => this.emit('game:devilReveal', data));
-    this.socket.on('game:devilShot', (data: any) => this.emit('game:devilShot', data));
-    this.socket.on('game:devilAcceptShot', (data: any) => this.emit('game:devilAcceptShot', data));
+    this.socket.on('game:slashShot', (data: any) => this.emit('game:slashShot', data));
     this.socket.on('game:trigger', (data: any) => this.emit('game:trigger', data));
     this.socket.on('game:newRound', (data: any) => this.emit('game:newRound', data));
     this.socket.on('game:over', (data: any) => this.emit('game:over', data));

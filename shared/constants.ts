@@ -2,8 +2,8 @@ export const GAME_CONSTANTS = {
   MIN_PLAYERS: 2,
   MAX_PLAYERS: 4,
   CARDS_PER_HAND: 5,
-  TOTAL_CARDS: 22,
-  CARDS_PER_TYPE: { king: 6, queen: 6, ace: 6, joker: 2, devil: 2 },
+  TOTAL_CARDS: 21,
+  CARDS_PER_TYPE: { king: 6, queen: 6, ace: 6, joker: 2, devil: 1 },
 
   TOTAL_CHAMBERS: 6,
   INITIAL_BULLETS: 1,

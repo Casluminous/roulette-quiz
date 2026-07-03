@@ -6,7 +6,7 @@ const CARD_COUNTS: Record<CardType, number> = {
   queen: 6,
   ace: 6,
   joker: 2,
-  devil: 2,
+  devil: 1,
 };
 
 export class DeckManager {

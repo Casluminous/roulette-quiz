@@ -4,10 +4,11 @@ import { MainMenu } from './components/MainMenu';
 import { Lobby } from './components/Lobby';
 import { GameBoard } from './components/GameBoard';
 import { GameOver } from './components/GameOver';
-import { Screen, ConnectionStatus, GamePhase, Player, Card, TriggerResult, WinnerInfo, TableType, CallResult, DevilReveal, GunState } from './types';
+import { Screen, ConnectionStatus, GamePhase, Player, Card, TriggerResult, WinnerInfo, TableType, CallResult, DevilReveal, GunState, SlashEffect } from './types';
 import { Sounds } from './audio/Sounds';
 import { useBotGame } from './hooks/useBotGame';
 import { ChatBox } from './components/ChatBox';
+import { SlashEffect as SlashEffectOverlay } from './components/SlashEffect';
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>('menu');
@@ -30,6 +31,7 @@ export default function App() {
   const [callResult, setCallResult] = useState<CallResult | null>(null);
   const [devilReveal, setDevilReveal] = useState<DevilReveal | null>(null);
   const [triggerResult, setTriggerResult] = useState<TriggerResult | null>(null);
+  const [slashEffect, setSlashEffect] = useState<SlashEffect | null>(null);
   const [winnerInfo, setWinnerInfo] = useState<WinnerInfo | null>(null);
   const [canCall, setCanCall] = useState<boolean>(false);
   const [gunState, setGunState] = useState<GunState>({ bulletsFired: 0, currentPosition: 0, bulletCount: 6 });
@@ -235,35 +237,12 @@ export default function App() {
       Sounds.devilReveal();
     });
 
-    socketClient.on('game:devilShot', (data: { targetName: string; targetId: string; alive: boolean; bulletCount: number }) => {
-      setTriggerResult({
-        alive: data.alive,
-        playerId: data.targetId,
-        playerName: data.targetName,
-        bulletCount: data.bulletCount,
-      });
+    socketClient.on('game:slashShot', (data: SlashEffect) => {
+      setSlashEffect(data);
       setPhase('trigger');
 
-      if (!data.alive) {
-        setPlayers(prev => prev.map(p => {
-          if (p.id === data.targetId) {
-            return { ...p, isAlive: false, cardsCount: 0 };
-          }
-          return p;
-        }));
-      }
-
-      setTimeout(() => {
-        setTriggerResult(null);
-        setCallResult(null);
-        setDevilReveal(null);
-      }, 5000);
-    });
-
-    socketClient.on('game:devilAcceptShot', (data: { players: { id: string; name: string; alive: boolean }[]; bulletCount: number }) => {
-      setPhase('trigger');
       setPlayers(prev => prev.map(p => {
-        const update = data.players.find((u: any) => u.id === p.id);
+        const update = data.players.find(u => u.id === p.id);
         if (update) {
           return { ...p, isAlive: update.alive, cardsCount: update.alive ? p.cardsCount : 0 };
         }
@@ -284,6 +263,7 @@ export default function App() {
         setTriggerResult(null);
         setCallResult(null);
         setDevilReveal(null);
+        setSlashEffect(null);
       }, 5000);
     });
 
@@ -376,7 +356,7 @@ export default function App() {
     });
 
     return () => {
-      ['room:created', 'room:joined', 'room:players', 'room:left', 'game:start', 'game:deal', 'game:turn', 'game:cardsPlayed', 'game:callResult', 'game:devilReveal', 'game:devilShot', 'game:devilAcceptShot', 'game:trigger', 'game:newRound', 'game:over', 'game:playerLeft', 'game:playerLeftAfterDeath', 'game:cardsUpdate', 'game:accepted', 'game:roundEnd', 'error'].forEach(event => {
+      ['room:created', 'room:joined', 'room:players', 'room:left', 'game:start', 'game:deal', 'game:turn', 'game:cardsPlayed', 'game:callResult', 'game:devilReveal', 'game:slashShot', 'game:trigger', 'game:newRound', 'game:over', 'game:playerLeft', 'game:playerLeftAfterDeath', 'game:cardsUpdate', 'game:accepted', 'game:roundEnd', 'error'].forEach(event => {
         socketClient.clearListeners(event);
       });
     };
@@ -431,6 +411,10 @@ export default function App() {
           winnerInfo={winnerInfo}
           disconnect={handleDisconnect}
         />
+      )}
+
+      {slashEffect && (
+        <SlashEffectOverlay data={slashEffect} onComplete={() => setSlashEffect(null)} />
       )}
 
       {screen !== 'menu' && !botMode && (

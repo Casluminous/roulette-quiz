@@ -224,7 +224,7 @@ export class GameManager {
         playerName: game.players[playerIndex].name,
       });
       setTimeout(() => {
-        this.handleDevilAcceptTrigger(roomId);
+        this.handleDevilAcceptTrigger(roomId, playerIndex);
       }, 2000);
       return;
     }
@@ -277,7 +277,7 @@ export class GameManager {
 
     if (hasDevilCard) {
       setTimeout(() => {
-        this.handleDevilCallTrigger(roomId, playerIndex);
+        this.handleDevilCallTrigger(roomId, playerIndex, previousPlayerIndex);
       }, 3000);
       return;
     }
@@ -318,34 +318,7 @@ export class GameManager {
     }, 3000);
   }
 
-  private handleDevilCallTrigger(roomId: string, callerIndex: number): void {
-    const game = this.games.get(roomId);
-    if (!game) return;
-
-    const caller = game.players[callerIndex];
-    const devilGun = game.devilGun;
-    const bullet = devilGun.chambers[devilGun.currentPosition];
-    devilGun.bulletsFired++;
-    devilGun.currentPosition = (devilGun.currentPosition + 1) % 4;
-
-    this.io.to(roomId).emit('game:devilShot', {
-      targetName: caller.name,
-      targetId: caller.id,
-      alive: !bullet,
-      bulletCount: 4 - devilGun.bulletsFired,
-    });
-
-    if (bullet) {
-      caller.isAlive = false;
-      caller.hasCards = false;
-    }
-
-    setTimeout(() => {
-      this.afterTrigger(roomId, bullet);
-    }, 3000);
-  }
-
-  private handleDevilAcceptTrigger(roomId: string): void {
+  private handleDevilCallTrigger(roomId: string, callerIndex: number, devilPlayerIndex: number): void {
     const game = this.games.get(roomId);
     if (!game) return;
 
@@ -353,7 +326,7 @@ export class GameManager {
     const affectedPlayers: { id: string; name: string; alive: boolean }[] = [];
 
     game.players.forEach((player) => {
-      if (player.isAlive) {
+      if (player.isAlive && player.id !== game.players[devilPlayerIndex].id) {
         const bullet = devilGun.chambers[devilGun.currentPosition];
         devilGun.bulletsFired++;
         devilGun.currentPosition = (devilGun.currentPosition + 1) % 4;
@@ -371,14 +344,45 @@ export class GameManager {
       }
     });
 
-    this.io.to(roomId).emit('game:devilAcceptShot', {
+    this.io.to(roomId).emit('game:slashShot', {
       players: affectedPlayers,
       bulletCount: 4 - devilGun.bulletsFired,
+      isAccept: false,
+      excludedPlayerId: game.players[devilPlayerIndex].id,
+      excludedPlayerName: game.players[devilPlayerIndex].name,
     });
 
     const anyDied = affectedPlayers.some(p => !p.alive);
     setTimeout(() => {
       this.afterTrigger(roomId, anyDied);
+    }, 3000);
+  }
+
+  private handleDevilAcceptTrigger(roomId: string, accepterIndex: number): void {
+    const game = this.games.get(roomId);
+    if (!game) return;
+
+    const accepter = game.players[accepterIndex];
+    const devilGun = game.devilGun;
+    const bullet = devilGun.chambers[devilGun.currentPosition];
+    devilGun.bulletsFired++;
+    devilGun.currentPosition = (devilGun.currentPosition + 1) % 4;
+
+    if (bullet) {
+      accepter.isAlive = false;
+      accepter.hasCards = false;
+    }
+
+    this.io.to(roomId).emit('game:slashShot', {
+      players: [{ id: accepter.id, name: accepter.name, alive: !bullet }],
+      bulletCount: 4 - devilGun.bulletsFired,
+      isAccept: true,
+      excludedPlayerId: null,
+      excludedPlayerName: null,
+    });
+
+    setTimeout(() => {
+      this.afterTrigger(roomId, bullet);
     }, 3000);
   }
 
