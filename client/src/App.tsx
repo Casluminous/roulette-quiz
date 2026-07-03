@@ -50,6 +50,7 @@ export default function App() {
     setPlayedBy,
     setCallResult,
     setCanCall,
+    setSlashEffect,
   };
 
   const {
@@ -249,18 +250,7 @@ export default function App() {
         return p;
       }));
 
-      const firstDead = data.players.find(p => !p.alive);
-      if (firstDead) {
-        setTriggerResult({
-          alive: false,
-          playerId: firstDead.id,
-          playerName: firstDead.name,
-          bulletCount: data.bulletCount,
-        });
-      }
-
       setTimeout(() => {
-        setTriggerResult(null);
         setCallResult(null);
         setDevilReveal(null);
         setSlashEffect(null);

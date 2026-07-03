@@ -28,6 +28,7 @@ interface BotGameCallbacks {
   setPlayedBy: (v: string) => void;
   setCallResult: (v: CallResult | null) => void;
   setCanCall: (v: boolean) => void;
+  setSlashEffect: (v: import('../types').SlashEffect | null) => void;
 }
 
 const DECK_CONFIG: Record<CardType, number> = {
@@ -320,19 +321,17 @@ export function useBotGame(playerName: string, callbacks: BotGameCallbacks) {
       return p;
     }));
 
-    const firstDead = affectedPlayers.find(p => !p.alive);
-    if (firstDead) {
-      cb.setTriggerResult({
-        alive: false,
-        playerId: firstDead.id,
-        playerName: firstDead.name,
-        bulletCount: 4 - devilGun.bulletsFired,
-      });
-      cb.setPhase('trigger');
-    }
+    cb.setSlashEffect({
+      players: affectedPlayers,
+      bulletCount: 4 - devilGun.bulletsFired,
+      isAccept: false,
+      excludedPlayerId: null,
+      excludedPlayerName: null,
+    });
+    cb.setPhase('trigger');
 
     setTimeout(() => {
-      cb.setTriggerResult(null);
+      cb.setSlashEffect(null);
       affectedPlayers.forEach(p => {
         if (!p.alive && p.id === 'local-player') {
           handCardsRef.current = [];
