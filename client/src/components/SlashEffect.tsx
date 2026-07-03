@@ -87,7 +87,7 @@ export function SlashEffect({ data, onComplete }: SlashEffectProps) {
         )}
       </AnimatePresence>
 
-      {/* Knife — vertical, appears above avatar, spins 360°, stabs down hard */}
+      {/* Knife — appears below cards, spins 360°, stabs UP into avatar */}
       <AnimatePresence>
         {(phase === 'appear' || phase === 'spin' || phase === 'slash') && (
           <motion.div
@@ -97,13 +97,13 @@ export function SlashEffect({ data, onComplete }: SlashEffectProps) {
               marginLeft: '-20px',
               filter: 'drop-shadow(0 0 15px rgba(255,255,255,0.3))',
             }}
-            initial={{ opacity: 0, scale: 0.3, top: '-5%', rotate: 0 }}
+            initial={{ opacity: 0, scale: 0.3, top: '68%', rotate: 0 }}
             animate={
               phase === 'appear'
-                ? { opacity: 1, scale: 1, top: '-5%', rotate: 0 }
+                ? { opacity: 1, scale: 1, top: '68%', rotate: 0 }
                 : phase === 'spin'
-                ? { opacity: 1, scale: 1.1, top: '-5%', rotate: 360 }
-                : { opacity: 0, scale: 1.6, top: '22%', rotate: 360 }
+                ? { opacity: 1, scale: 1.1, top: '68%', rotate: 360 }
+                : { opacity: 0, scale: 1.6, top: '16%', rotate: 360 }
             }
             exit={{ opacity: 0 }}
             transition={
