@@ -46,7 +46,7 @@ export function SlashEffect({ data, onComplete }: SlashEffectProps) {
     hasDied: !p.alive,
   })), [data.players]);
 
-  const slashY = '18%';
+  const slashY = '12%';
   const slashX = '50%';
 
   return (
@@ -75,15 +75,15 @@ export function SlashEffect({ data, onComplete }: SlashEffectProps) {
             style={{
               left: slashX,
               width: '3px',
-              top: '80%',
+              top: '90%',
               height: '0%',
               marginLeft: '-1.5px',
               background: 'linear-gradient(to top, transparent 0%, rgba(255,255,255,0.6) 30%, rgba(255,255,255,0.9) 60%, transparent 100%)',
               filter: 'blur(1px)',
             }}
             animate={{
-              height: ['0%', '65%'],
-              top: ['80%', '18%'],
+              height: ['0%', '80%'],
+              top: ['90%', '12%'],
               opacity: [0, 1, 0],
             }}
             transition={{ duration: 0.25, ease: 'easeOut' }}
@@ -102,12 +102,12 @@ export function SlashEffect({ data, onComplete }: SlashEffectProps) {
               marginLeft: '-20px',
               filter: 'drop-shadow(0 0 15px rgba(255,255,255,0.4))',
             }}
-            initial={{ opacity: 0, scale: 0.3, top: '85%', rotate: 0 }}
+            initial={{ opacity: 0, scale: 0.3, top: '90%', rotate: 0 }}
             animate={
               phase === 'appear'
-                ? { opacity: 1, scale: 1, top: '85%', rotate: 0 }
+                ? { opacity: 1, scale: 1, top: '90%', rotate: 0 }
                 : phase === 'spin'
-                ? { opacity: 1, scale: 1.1, top: '85%', rotate: 360 }
+                ? { opacity: 1, scale: 1.1, top: '90%', rotate: 360 }
                 : { opacity: 0, scale: 1.5, top: slashY, rotate: 360 }
             }
             exit={{ opacity: 0 }}
