@@ -355,6 +355,11 @@ export function GameBoard({
   const isSpectating = !localPlayer.isAlive;
   const isMyTurn = currentTurnId === localId;
 
+  const sortedHandCards = [...handCards].sort((a, b) => {
+    const order = { king: 0, queen: 1, ace: 2, joker: 3, devil: 4 };
+    return (order[a.type as keyof typeof order] ?? 5) - (order[b.type as keyof typeof order] ?? 5);
+  });
+
   const getHUDPhaseLabel = () => {
     if (phase === 'waiting') return 'SYSTEM // INITIALIZING';
     if (phase === 'dealing') return 'SYSTEM // DEALING_CARDS';
@@ -617,10 +622,7 @@ export function GameBoard({
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex flex-col items-center space-y-2 z-20 w-full max-w-3xl">
         <div className="flex justify-center items-center h-52 relative w-full" style={{ perspective: '1200px' }}>
           <AnimatePresence>
-            {[...handCards].sort((a, b) => {
-              const order = { king: 0, queen: 1, ace: 2, joker: 3 };
-              return order[a.type] - order[b.type];
-            }).map((card, index) => {
+            {sortedHandCards.map((card, index) => {
               const total = handCards.length;
               const mid = (total - 1) / 2;
               const dist = index - mid;
@@ -724,8 +726,8 @@ export function GameBoard({
 
       {/* Card Info Panel - Left side */}
       <AnimatePresence>
-        {hoveredCardIndex !== null && handCards[hoveredCardIndex] && (() => {
-          const card = handCards[hoveredCardIndex];
+        {hoveredCardIndex !== null && sortedHandCards[hoveredCardIndex] && (() => {
+          const card = sortedHandCards[hoveredCardIndex];
           const style = getCardTypeStyle(card.type);
           const info = CARD_INFO[card.type as CardInfoKey];
           if (!info) return null;
