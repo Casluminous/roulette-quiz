@@ -179,8 +179,8 @@ export function GameBoard({
       if (resetFireTimerRef.current) clearTimeout(resetFireTimerRef.current);
 
       setIsGunInCenter(true);
-      setIsSpinning(true);
-      Sounds.gunClick();
+      setIsFiring(false);
+      setIsSpinning(false);
 
       const playerId = triggerResult.playerId;
       let targetAngle = -90;
@@ -196,26 +196,33 @@ export function GameBoard({
           }
         }
       }
-      setRotationAngle(targetAngle);
 
       spinTimerRef.current = setTimeout(() => {
-        setIsSpinning(false);
-        setIsFiring(true);
+        setRotationAngle(targetAngle);
+        setIsSpinning(true);
+        Sounds.gunClick();
 
-        if (triggerResult.alive) {
-          Sounds.gunSurvive();
-          showHUDAlert('CLICK // COCK SURVIVED', 'text-amber-theme', 2000);
-        } else {
-          Sounds.gunFire();
-          showHUDAlert('BANG // PROTOCOL FAULT', 'text-red-theme', 3000);
-        }
+        spinTimerRef.current = setTimeout(() => {
+          setIsSpinning(false);
+          setIsFiring(true);
 
-        resetFireTimerRef.current = setTimeout(() => {
-          setIsFiring(false);
-          setRotationAngle(-90);
-          setIsGunInCenter(false);
-        }, 2000);
-      }, 1200);
+          if (triggerResult.alive) {
+            Sounds.gunSurvive();
+            showHUDAlert('CLICK // COCK SURVIVED', 'text-amber-theme', 2000);
+          } else {
+            Sounds.gunFire();
+            showHUDAlert('BANG // PROTOCOL FAULT', 'text-red-theme', 3000);
+          }
+
+          resetFireTimerRef.current = setTimeout(() => {
+            setIsFiring(false);
+            setIsGunInCenter(false);
+            spinTimerRef.current = setTimeout(() => {
+              setRotationAngle(-90);
+            }, 400);
+          }, 1500);
+        }, 800);
+      }, 400);
     } else {
       lastProcessedTriggerRef.current = null;
     }

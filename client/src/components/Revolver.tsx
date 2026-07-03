@@ -89,7 +89,7 @@ export function Revolver({ bulletsFired, currentPosition, isSpinning, isFiring, 
                 rotate: isFiring ? [0, 35, -20, 0] : isSpinning ? 35 : 0 
               }}
               transition={{ 
-                duration: isFiring ? 0.22 : 0.15,
+                duration: isFiring ? 0.22 : isSpinning ? 0.15 : 0,
                 ease: "easeInOut"
               }}
             >
