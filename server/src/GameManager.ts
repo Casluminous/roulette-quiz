@@ -444,6 +444,8 @@ export class GameManager {
     } else {
       this.io.to(roomId).emit('game:trigger', {
         alive: true,
+        playerId: targetPlayer.id,
+        playerName: targetPlayer.name,
         bulletCount: 6 - gun.bulletsFired,
       });
     }

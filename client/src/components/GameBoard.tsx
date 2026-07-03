@@ -106,6 +106,7 @@ export function GameBoard({
   const [hudMessage, setHudMessage] = useState<HudMessage | null>(null);
   const [rotationAngle, setRotationAngle] = useState<number>(-90);
   const [isGunInCenter, setIsGunInCenter] = useState<boolean>(false);
+  const [gunOpacity, setGunOpacity] = useState<number>(1);
 
   const [isDealing, setIsDealing] = useState<boolean>(false);
   const [revealedCards, setRevealedCards] = useState<Set<string>>(new Set());
@@ -126,6 +127,7 @@ export function GameBoard({
     setIsFiring(false);
     setRotationAngle(-90);
     setIsGunInCenter(false);
+    setGunOpacity(1);
     setIsDealing(false);
     setRevealedCards(new Set());
     setSelectedCards(new Set());
@@ -179,6 +181,7 @@ export function GameBoard({
       if (resetFireTimerRef.current) clearTimeout(resetFireTimerRef.current);
 
       setIsGunInCenter(true);
+      setGunOpacity(1);
       setIsFiring(false);
       setIsSpinning(false);
 
@@ -216,10 +219,16 @@ export function GameBoard({
 
           resetFireTimerRef.current = setTimeout(() => {
             setIsFiring(false);
-            setIsGunInCenter(false);
-            spinTimerRef.current = setTimeout(() => {
+            setGunOpacity(0);
+
+            resetFireTimerRef.current = setTimeout(() => {
               setRotationAngle(-90);
-            }, 400);
+              setIsGunInCenter(false);
+
+              resetFireTimerRef.current = setTimeout(() => {
+                setGunOpacity(1);
+              }, 400);
+            }, 100);
           }, 1500);
         }, 800);
       }, 400);
@@ -545,9 +554,10 @@ export function GameBoard({
         animate={{
           left: isGunInCenter ? "50%" : "calc(50% + 480px)",
           top: "48%",
-          scale: isGunInCenter ? 1.5 : 1.25
+          scale: isGunInCenter ? 1.5 : 1.25,
+          opacity: gunOpacity
         }}
-        transition={{ duration: 0.6, type: "spring", bounce: 0.2 }}
+        transition={{ duration: gunOpacity === 0 ? 0.15 : 0.6, type: "spring", bounce: gunOpacity === 0 ? 0 : 0.2 }}
         className="absolute -translate-x-1/2 -translate-y-1/2 z-50 pointer-events-none"
       >
         <Revolver
