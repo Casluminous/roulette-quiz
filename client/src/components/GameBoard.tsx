@@ -75,6 +75,41 @@ const getCardTypeStyle = (type: CardType): { color: string; label: string; icon:
   }
 };
 
+const CARD_INFO: Record<string, { title: string; subtitle: string; quote: string; flavor: string }> = {
+  king: {
+    title: 'THE KING',
+    subtitle: 'SOVEREIGN OF CHAOS',
+    quote: '"Every crown is forged in the blood of those who knelt before it."',
+    flavor: 'Rulers born from ruin. Their reign ends where the barrel begins.',
+  },
+  queen: {
+    title: 'THE QUEEN',
+    subtitle: 'ARCHITECT OF RUIN',
+    quote: '"She doesn\'t play the game — she reshapes it in her image."',
+    flavor: 'Graceful as a loaded chamber. Beautiful until it isn\'t.',
+  },
+  ace: {
+    title: 'THE ACE',
+    subtitle: 'FIRST bullet, LAST breath',
+    quote: '"In this house, an ace means you\'re one pull away from silence."',
+    flavor: 'The sharp end of probability. Hold it wrong and you\'re done.',
+  },
+  joker: {
+    title: 'THE JOKER',
+    subtitle: 'WILD CARD PROTOCOL',
+    quote: '"Chaos doesn\'t pick sides — it just watches you burn."',
+    flavor: 'Unpredictable. Untamable. The only card that answers to no one.',
+  },
+  devil: {
+    title: 'THE DEVIL',
+    subtitle: 'FORBIDDEN CURRENCY',
+    quote: '"Play the devil\'s card and the house always collects — in flesh."',
+    flavor: 'A pact written in ink and gunpowder. Sign at your own peril.',
+  },
+};
+
+type CardInfoKey = keyof typeof CARD_INFO;
+
 type CardType = 'king' | 'queen' | 'ace' | 'joker' | 'devil';
 
 export function GameBoard({
@@ -686,6 +721,50 @@ export function GameBoard({
           </AnimatePresence>
         </div>
       </div>
+
+      {/* Card Info Panel - Left side */}
+      <AnimatePresence>
+        {hoveredCardIndex !== null && handCards[hoveredCardIndex] && (() => {
+          const card = handCards[hoveredCardIndex];
+          const style = getCardTypeStyle(card.type);
+          const info = CARD_INFO[card.type as CardInfoKey];
+          if (!info) return null;
+          return (
+            <motion.div
+              key={card.id}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.2 }}
+              className="absolute left-6 top-[38%] -translate-y-1/2 z-40 w-56 pointer-events-none"
+            >
+              <div className="bg-panel-solid/95 border border-border-theme p-4 backdrop-blur-md">
+                <div className="flex items-center gap-2 mb-3 border-b border-border-theme pb-2">
+                  <span className="text-2xl" style={{ color: style.color }}>{style.icon}</span>
+                  <div>
+                    <div className="text-xs font-black tracking-widest uppercase font-mono" style={{ color: style.color }}>
+                      {info.title}
+                    </div>
+                    <div className="text-[8px] font-mono tracking-wider text-text-theme-dim uppercase">
+                      {info.subtitle}
+                    </div>
+                  </div>
+                </div>
+                <p className="text-[10px] font-mono italic text-text-theme-secondary leading-relaxed mb-2">
+                  {info.quote}
+                </p>
+                <p className="text-[9px] font-mono text-text-theme-dim leading-relaxed">
+                  {info.flavor}
+                </p>
+                <div className="mt-2 pt-2 border-t border-border-theme flex justify-between text-[8px] font-mono text-text-theme-dim">
+                  <span>TYPE // {style.label}</span>
+                  <span style={{ color: style.color }}>◆</span>
+                </div>
+              </div>
+            </motion.div>
+          );
+        })()}
+      </AnimatePresence>
 
       {/* Play/Call/Accept Buttons - Center of screen */}
       <div className="absolute top-[55%] left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 flex flex-col items-center gap-3">
