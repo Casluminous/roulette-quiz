@@ -670,8 +670,8 @@ export function GameBoard({
                     transformOrigin: 'center 110%',
                     zIndex: hoverZ,
                     transformStyle: 'preserve-3d',
-                    borderColor: (isHovered || isSelected) ? 'var(--border-theme)' : 'var(--border-theme)60',
-                    boxShadow: isSelected ? '0 0 15px rgba(16, 185, 129, 0.3)' : 'none',
+                    borderColor: (isHovered || isSelected) ? cardStyle.color : `${cardStyle.color}60`,
+                    boxShadow: isSelected ? `0 0 15px ${cardStyle.color}60` : 'none',
                     margin: '0 4px',
                   }}
                 >
